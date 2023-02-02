@@ -1,43 +1,78 @@
-#include <Windows.h>
+#include "Galt.h"
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-#define Assert(x) { if (!(x)) __debugbreak(); }
-
-constexpr int SCREEN_WIDTH = 1920;
-constexpr int SCREEN_HEIGHT = 1080;
-
-int CALLBACK WinMain(HINSTANCE instance,
-                     HINSTANCE prevInstance,
-                     LPSTR     commandLine,
-                     int       showCode)
+void UpdateAndRender(GameMemory* memory, ControllerInput* input)
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	Assert(sizeof(GameState) <= memory->PermStorageSize);
 	
-	OutputDebugStringA("sup, homie\n");
-	
-	GLFWwindow* window = glfwCreateWindow(1920, 1080,
-	                                      "Galt engine",
-	                                      nullptr, nullptr);
-	Assert(window);
-	glfwMakeContextCurrent(window);
-
-	Assert(FreeConsole());
-
-	Assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
-
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-
-	while (!glfwWindowShouldClose(window))
+	GameState* state = (GameState*)memory->PermStorage;
+	if (!memory->IsInitialised)
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
+		constexpr float vertices[] = {
+			-0.5f, 0.0f, 0.0f,
+			 0.0f, 0.5f, 0.0f,
+			 0.5f, 0.0f, 0.0f		
+		};
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		glGenVertexArrays(1, &state->VertexArrayId);
+		glBindVertexArray(state->VertexArrayId);
+
+		uint32_t vertexBuffer;
+		glGenBuffers(1, &vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+
+		state->ClearR = 1.0f;
+		state->ClearG = 1.0f;
+		state->ClearB = 0.0f;
+
+		memory->IsInitialised = true;
 	}
+
+	constexpr float colourSpeed = 0.001f;
+	if (input->Up)
+	{
+		state->ClearR += colourSpeed;
+	}
+	if (input->Down)
+	{
+		state->ClearR -= colourSpeed;
+	}
+	if (input->Left)
+	{
+		state->ClearG -= colourSpeed;
+	}
+	if (input->Right)
+	{
+		state->ClearG += colourSpeed;
+	}
+	if (state->ClearR < 0.0f)
+	{
+		state->ClearR = 0.0f;
+	}
+	if (state->ClearR > 1.0f)
+	{
+		state->ClearR = 1.0f;
+	}
+	if (state->ClearG < 0.0f)
+	{
+		state->ClearG = 0.0f;
+	}
+	if (state->ClearG > 1.0f)
+	{
+		state->ClearG = 1.0f;
+	}
+
+	glClearColor(state->ClearR, state->ClearG, state->ClearB, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindVertexArray(state->VertexArrayId);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindVertexArray(0);
+
 }
