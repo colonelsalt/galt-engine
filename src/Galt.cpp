@@ -2,10 +2,18 @@
 
 #include <glad/glad.h>
 
-void UpdateAndRender(GameMemory* memory, ControllerInput* input)
+#include "Shader.cpp"
+
+extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* input)
 {
 	Assert(sizeof(GameState) <= memory->PermStorageSize);
 	
+	if (!memory->OpenGlInitialised)
+	{
+		gladLoadGLLoader(memory->GladLoader);
+		memory->OpenGlInitialised = true;
+	}
+
 	GameState* state = (GameState*)memory->PermStorage;
 	if (!memory->IsInitialised)
 	{
@@ -14,8 +22,12 @@ void UpdateAndRender(GameMemory* memory, ControllerInput* input)
 			 0.0f, 0.5f, 0.0f,
 			 0.5f, 0.0f, 0.0f		
 		};
+		uint32_t vao;
 
-		glGenVertexArrays(1, &state->VertexArrayId);
+		glGenVertexArrays(1, &vao);
+
+		state->VertexArrayId = vao;
+
 		glBindVertexArray(state->VertexArrayId);
 
 		uint32_t vertexBuffer;
@@ -25,51 +37,57 @@ void UpdateAndRender(GameMemory* memory, ControllerInput* input)
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-		state->ClearR = 1.0f;
-		state->ClearG = 1.0f;
-		state->ClearB = 0.0f;
+		state->TestShader.RendererId =
+			ShaderCompileProgram("BasicVert.glsl", "BasicFrag.glsl", memory);
 
 		memory->IsInitialised = true;
 	}
 
-	constexpr float colourSpeed = 0.001f;
+	memory->ResetTempMemory();
+
+	constexpr float moveSpeed = 0.001f;
 	if (input->Up)
 	{
-		state->ClearR += colourSpeed;
+		state->PlayerY += moveSpeed;
 	}
 	if (input->Down)
 	{
-		state->ClearR -= colourSpeed;
+		state->PlayerY -= moveSpeed;
 	}
 	if (input->Left)
 	{
-		state->ClearG -= colourSpeed;
+		state->PlayerX -= moveSpeed;
 	}
 	if (input->Right)
 	{
-		state->ClearG += colourSpeed;
+		state->PlayerX += moveSpeed;
 	}
-	if (state->ClearR < 0.0f)
+	
+	// Clamping
+	if (state->PlayerX > 1.0f)
 	{
-		state->ClearR = 0.0f;
+		state->PlayerX = 1.0f;
 	}
-	if (state->ClearR > 1.0f)
+	if (state->PlayerX < -1.0f)
 	{
-		state->ClearR = 1.0f;
+		state->PlayerX = -1.0f;
 	}
-	if (state->ClearG < 0.0f)
+	if (state->PlayerY > 1.0f)
 	{
-		state->ClearG = 0.0f;
+		state->PlayerY = 1.0f;
 	}
-	if (state->ClearG > 1.0f)
+	if (state->PlayerY < -1.0f)
 	{
-		state->ClearG = 1.0f;
+		state->PlayerY = -1.0f;
 	}
 
-	glClearColor(state->ClearR, state->ClearG, state->ClearB, 1.0f);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glBindVertexArray(state->VertexArrayId);
+	state->TestShader.Bind();
+	state->TestShader.SetFloat("u_OffsetX", state->PlayerX);
+	state->TestShader.SetFloat("u_OffsetY", state->PlayerY);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 

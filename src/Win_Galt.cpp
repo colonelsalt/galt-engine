@@ -3,10 +3,123 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Galt.cpp"
+#include "Win_Galt.h"
 
 constexpr int SCREEN_WIDTH = 1280;
 constexpr int SCREEN_HEIGHT = 720;
+
+inline FILETIME WinGetLastWriteTime(char* fileName)
+{
+	FILETIME lastWriteTime = {};
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if (GetFileAttributesExA(fileName, GetFileExInfoStandard, &data))
+	{
+		lastWriteTime = data.ftLastWriteTime;
+	}
+	return lastWriteTime;
+}
+
+static void WinParseExePath(WinExePath* path)
+{
+	DWORD pathSize = GetModuleFileNameA(0,
+	                                    path->ExeFullPath,
+	                                    sizeof(path->ExeFullPath));
+	for (int i = 0; path->ExeFullPath[i]; i++)
+	{
+		if (path->ExeFullPath[i] == '\\')
+		{
+			path->LastSlashIndex = i;
+		}
+	}
+}
+
+static void WinStrCat(char* src1, int length1,
+                      char* src2, int length2,
+                      char* dest)
+{
+	for (int i = 0; i < length1; i++)
+	{
+		*dest++ = src1[i];
+	}
+	for (int i = 0; i < length2; i++)
+	{
+		*dest++ = src2[i];
+	}
+	*dest = 0;
+}
+
+static WinGameCode WinLoadGameCode(char* sourceDllName, char* tempDllName)
+{
+	WinGameCode result = {};
+
+	result.DllLastWriteTime = WinGetLastWriteTime(sourceDllName);
+	CopyFile(sourceDllName, tempDllName, FALSE);
+	result.GameCodeDll = LoadLibraryA(tempDllName);
+	if (result.GameCodeDll)
+	{
+		result.UpdateAndRender = (GameUpdateFunc*)
+			GetProcAddress(result.GameCodeDll, "UpdateAndRender");
+		
+		result.IsValid = result.UpdateAndRender;
+	}
+	if (!result.IsValid)
+	{
+		result.UpdateAndRender = nullptr;
+	}
+	return result;
+}
+
+static void WinUnloadGameCode(WinGameCode* gameCode)
+{
+	if (gameCode->GameCodeDll)
+	{
+		FreeLibrary(gameCode->GameCodeDll);
+		gameCode->GameCodeDll = 0;
+	}
+	gameCode->IsValid = false;
+	gameCode->UpdateAndRender = nullptr;
+}
+
+FileResult WinReadFile(const char* fileName)
+{
+	FileResult result = {};
+	HANDLE fileHandle = CreateFileA(fileName,
+	                                GENERIC_READ,
+	                                FILE_SHARE_READ,
+	                                0,
+	                                OPEN_EXISTING,
+	                                0, 0);
+	Assert(fileHandle != INVALID_HANDLE_VALUE);
+
+	LARGE_INTEGER fileSize;
+	Assert(GetFileSizeEx(fileHandle, &fileSize));
+
+	uint32_t fileSize32 = SafeTruncateUInt64(fileSize.QuadPart);
+
+	result.Contents = VirtualAlloc(0,
+	                               fileSize32,
+	                               MEM_RESERVE | MEM_COMMIT,
+	                               PAGE_READWRITE);
+	Assert(result.Contents);
+	
+	DWORD bytesRead;
+	BOOL readSuccess = ReadFile(fileHandle,
+	                            result.Contents,
+	                            fileSize32,
+	                            &bytesRead,
+	                            0);
+	Assert(readSuccess && fileSize32 == bytesRead);
+
+	CloseHandle(fileHandle);
+
+	return result;
+}
+
+void WinFreeFileMemory(void* memory)
+{
+	Assert(memory);
+	VirtualFree(memory, 0, MEM_RELEASE);
+}
 
 void GetKeyboardInput(GLFWwindow* window, ControllerInput* input)
 {
@@ -24,6 +137,22 @@ int CALLBACK WinMain(HINSTANCE instance,
                      LPSTR     commandLine,
                      int       showCode)
 {
+	// Build path to game code DLL for hot reloading
+	constexpr char* gameDllFileName = "Galt.dll";
+	constexpr char* tempDllFileName = "Galt_temp.dll";
+
+	WinExePath exePath = {};
+	WinParseExePath(&exePath);
+	char gameDllFullPath[MAX_PATH];
+	WinStrCat(exePath.ExeFullPath, exePath.LastSlashIndex + 1,
+	          gameDllFileName, (int)strlen(gameDllFileName),
+	          gameDllFullPath);
+
+	char tempDllFullPath[MAX_PATH];
+	WinStrCat(exePath.ExeFullPath, exePath.LastSlashIndex + 1,
+	          tempDllFileName, (int)strlen(tempDllFileName),
+	          tempDllFullPath);
+
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -40,15 +169,24 @@ int CALLBACK WinMain(HINSTANCE instance,
 	
 	GameMemory gameMemory = {};
 	gameMemory.PermStorageSize = Megabytes(64);
+	gameMemory.TempStorageSize = Gigabytes(1);
 
-	size_t totalSize = gameMemory.PermStorageSize;
+	size_t totalSize = gameMemory.PermStorageSize + gameMemory.TempStorageSize;
 
-	gameMemory.PermStorage = VirtualAlloc(baseAddress,
-	                                      totalSize,
-	                                      MEM_RESERVE | MEM_COMMIT,
-	                                      PAGE_READWRITE);
+	void* gameMemoryBlock = VirtualAlloc(baseAddress,
+	                                     totalSize,
+	                                     MEM_RESERVE | MEM_COMMIT,
+	                                     PAGE_READWRITE);
+	gameMemory.PermStorage = gameMemoryBlock;
+	gameMemory.TempStorage = ((uint8_t*)gameMemory.PermStorage + 
+		gameMemory.PermStorageSize);
+
+	gameMemory.ReadFile = WinReadFile;
+	gameMemory.FreeFile = WinFreeFileMemory;
+	gameMemory.GladLoader = (GLADloadproc)glfwGetProcAddress;
 
 	Assert(gameMemory.PermStorage);
+	Assert(gameMemory.TempStorage);
 
 	// Set up window ---
 	int numMonitors;
@@ -70,19 +208,32 @@ int CALLBACK WinMain(HINSTANCE instance,
 
 	Assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	WinGameCode game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
 
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	while (!glfwWindowShouldClose(window))
 	{
 		ControllerInput input = {};
+
+		FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
+		if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime))
+		{
+			WinUnloadGameCode(&game);
+			game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
+			gameMemory.OpenGlInitialised = false;
+		}
+
 		GetKeyboardInput(window, &input);
 		if (input.Back)
 		{
 			break;
 		}
 
-		UpdateAndRender(&gameMemory, &input);
+		if (game.UpdateAndRender)
+		{
+			game.UpdateAndRender(&gameMemory, &input);
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
