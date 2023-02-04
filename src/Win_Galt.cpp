@@ -19,6 +19,17 @@ inline FILETIME WinGetLastWriteTime(char* fileName)
 	return lastWriteTime;
 }
 
+int64_t WinGetLastWriteTimeExtern(char* fileName)
+{
+	ULARGE_INTEGER result = {};
+	FILETIME lastWriteTime = WinGetLastWriteTime(fileName);
+
+	result.LowPart = lastWriteTime.dwLowDateTime;
+	result.HighPart = lastWriteTime.dwHighDateTime;
+	
+	return (int64_t)result.QuadPart;
+}
+
 static void WinParseExePath(WinExePath* path)
 {
 	DWORD pathSize = GetModuleFileNameA(0,
@@ -184,6 +195,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	gameMemory.ReadFile = WinReadFile;
 	gameMemory.FreeFile = WinFreeFileMemory;
 	gameMemory.GladLoader = (GLADloadproc)glfwGetProcAddress;
+	gameMemory.GetLastWriteTime = WinGetLastWriteTimeExtern;
 
 	Assert(gameMemory.PermStorage);
 	Assert(gameMemory.TempStorage);
@@ -216,6 +228,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	{
 		ControllerInput input = {};
 
+		// Check if game code DLL needs reloading
 		FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
 		if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime))
 		{

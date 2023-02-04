@@ -22,11 +22,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 			 0.0f, 0.5f, 0.0f,
 			 0.5f, 0.0f, 0.0f		
 		};
-		uint32_t vao;
 
-		glGenVertexArrays(1, &vao);
-
-		state->VertexArrayId = vao;
+		glGenVertexArrays(1, &state->VertexArrayId);
 
 		glBindVertexArray(state->VertexArrayId);
 
@@ -37,13 +34,19 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-		state->TestShader.RendererId =
-			ShaderCompileProgram("BasicVert.glsl", "BasicFrag.glsl", memory);
+		Shader* testShader = &state->TestShader;
+
+		testShader->CompileProgram("BasicVert.glsl", "BasicFrag.glsl", memory);
 
 		memory->IsInitialised = true;
 	}
 
 	memory->ResetTempMemory();
+	for (int i = 0; i < ArrayCount(state->Shaders); i++)
+	{
+		Shader* shader = &state->Shaders[i];
+		shader->ReloadIfNeeded(memory);
+	}
 
 	constexpr float moveSpeed = 0.001f;
 	if (input->Up)
@@ -81,7 +84,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		state->PlayerY = -1.0f;
 	}
 
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glBindVertexArray(state->VertexArrayId);

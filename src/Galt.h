@@ -5,22 +5,15 @@
 
 #include "Shader.h"
 
-#define Kilobytes(value) ((value) * 1024LL)
-#define Megabytes(value) (Kilobytes(value) * 1024LL)
-#define Gigabytes(value) (Megabytes(value) * 1024LL)
-#define Terabytes(value) (Gigabytes(value) * 1024LL)
-#define Assert(x) { if (!(x)) __debugbreak(); }
-
-#define GAME_API __declspec(dllexport)
-
 struct FileResult
 {
 	uint32_t FileSize;
 	void* Contents;
 };
 
-typedef FileResult ReadFileFunction(const char* fileName);
-typedef void FreeFileMemoryFunction(void* memory);
+typedef FileResult ReadFileFunc(const char* fileName);
+typedef void FreeFileMemoryFunc(void* memory);
+typedef int64_t GetLastWriteTimeFunc(char* fileName);
 
 struct ControllerInput
 {
@@ -61,9 +54,11 @@ struct GameMemory
 	void* TempStorage;
 	uint64_t TempStorageCursor;
 
-	ReadFileFunction* ReadFile;
-	FreeFileMemoryFunction* FreeFile;
+	ReadFileFunc* ReadFile;
+	FreeFileMemoryFunc* FreeFile;
 	GLADloadproc GladLoader;
+	GetLastWriteTimeFunc* GetLastWriteTime;
+
 
 	inline void ResetTempMemory()
 	{
@@ -86,7 +81,14 @@ struct GameState
 	float PlayerX;
 	float PlayerY;
 
-	Shader TestShader;
+	union
+	{
+		Shader Shaders[1];
+		struct
+		{
+			Shader TestShader;
+		};
+	};
 };
 
 inline uint32_t SafeTruncateUInt64(uint64_t value)
@@ -102,7 +104,21 @@ inline size_t StrLen(const char* s)
 	return length;
 }
 
-inline static char* CatStr(const char* s1, const char* s2, GameMemory* memory)
+inline void CatStr(const char* s1, const char* s2, char* dest)
+{
+	int resultIndex = 0;
+	for (int i = 0; s1[i]; i++)
+	{
+		dest[resultIndex++] = s1[i];
+	}
+	for (int i = 0; s2[i]; i++)
+	{
+		dest[resultIndex++] = s2[i];
+	}
+	dest[resultIndex] = 0;
+}
+
+inline static char* CatStrTemp(const char* s1, const char* s2, GameMemory* memory)
 {
 	size_t length = StrLen(s1) + StrLen(s2) + 1;
 	char* result = (char*)memory->TempAlloc(length);
