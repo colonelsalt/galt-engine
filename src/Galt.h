@@ -59,13 +59,13 @@ struct GameState
 
 	Camera FpsCamera;
 	Primitive Plane;
+	Primitive Cube;
 
 	union
 	{
-		Shader Shaders[2];
+		Shader Shaders[1];
 		struct
 		{
-			Shader TestShader;
 			Shader PrimitiveShader;
 		};
 	};

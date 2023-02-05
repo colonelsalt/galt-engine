@@ -120,6 +120,12 @@ void Shader::SetVec2(const char* name, const glm::vec2& value)
 	glUniform2fv(location, 1, glm::value_ptr(value));
 }
 
+void Shader::SetVec3(const char* name, const glm::vec3& value)
+{
+	int location = glGetUniformLocation(RendererId, name);
+	glUniform3fv(location, 1, glm::value_ptr(value));
+}
+
 void Shader::SetMat4(const char* name, const glm::mat4& value)
 {
 	int location = glGetUniformLocation(RendererId, name);

@@ -23,32 +23,15 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	GameState* state = (GameState*)memory->PermStorage;
 	if (!memory->IsInitialised)
 	{
-		constexpr float vertices[] = {
-			-0.5f, 0.0f, 0.0f,
-			 0.0f, 0.5f, 0.0f,
-			 0.5f, 0.0f, 0.0f		
-		};
-
-		glGenVertexArrays(1, &state->TestVertexArrayId);
-
-		glBindVertexArray(state->TestVertexArrayId);
-
-		uint32_t vertexBuffer;
-		glGenBuffers(1, &vertexBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-
-		Shader* testShader = &state->TestShader;
-		testShader->CompileProgram("BasicVert.glsl", "BasicFrag.glsl", memory);
+		glEnable(GL_DEPTH_TEST);
 
 		Shader* primitiveShader = &state->PrimitiveShader;
 		primitiveShader->CompileProgram("PrimitiveVert.glsl",
 		                                "PrimitiveFrag.glsl",
 		                                memory);
 		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane(testShader);
+		state->Plane = CreatePlane(primitiveShader);
+		state->Cube = CreateCube(primitiveShader);
 		memory->IsInitialised = true;
 	}
 
@@ -63,7 +46,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	// Rendering ---
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindVertexArray(state->Plane.VertexArrayId);
 	state->PrimitiveShader.Bind();
@@ -72,7 +55,12 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
 	state->PrimitiveShader.SetMat4("u_Model", state->Plane.Model);
 
+	state->PrimitiveShader.SetVec3("u_Colour", { 1.0f, 0.0f, 0.0f });
 	glDrawArrays(GL_TRIANGLES, 0, state->Plane.NumVertices);
+
+	glBindVertexArray(state->Cube.VertexArrayId);
+	state->PrimitiveShader.SetVec3("u_Colour", { 1.0f, 1.0f, 0.0f });
+	glDrawArrays(GL_TRIANGLES, 0, state->Cube.NumVertices);
 
 #if 0
 	glBindVertexArray(state->TestVertexArrayId);
