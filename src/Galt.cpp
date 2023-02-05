@@ -5,6 +5,7 @@
 #include "Primitives.cpp"
 #include "Camera.cpp"
 #include "Textures.cpp"
+#include "Transform.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -36,6 +37,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		state->FpsCamera = CreateCamera();
 		state->Plane = CreatePlane(primitiveShader, "wood.png", memory);
 		state->Cube = CreateCube(primitiveShader, "container.png", memory);
+		state->Cube.Trans.Translation.y = 0.5001f;
 		memory->IsInitialised = true;
 	}
 
@@ -56,6 +58,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	state->PrimitiveShader.SetMat4("u_Projection", state->FpsCamera.Projection);
 	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
+
 
 	state->Plane.Draw();
 

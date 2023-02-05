@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Transform.h"
+
 struct Primitive
 {
 	uint32_t VertexArrayId;
@@ -10,7 +12,7 @@ struct Primitive
 
 	uint32_t TextureId;
 
-	glm::mat4 Model;
+	Transform Trans;
 
 	void Draw();
 };

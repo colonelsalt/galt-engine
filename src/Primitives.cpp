@@ -8,7 +8,7 @@ void Primitive::Draw()
 {
 	glBindVertexArray(VertexArrayId);
 	_Shader->Bind();
-	_Shader->SetMat4("u_Model", Model);
+	_Shader->SetMat4("u_Model", Trans.ToModel());
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureId);
@@ -62,7 +62,7 @@ static Primitive CreatePlane(Shader* shader, char* textureName, GameMemory* memo
 	result.NumVertices = ArrayCount(vertices) / 8;
 	result.VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	result.Model = glm::mat4(1.0f);
+	result.Trans = Transform::Blank();
 
 	return result;
 }
@@ -121,7 +121,7 @@ static Primitive CreateCube(Shader* shader, char* textureName, GameMemory* memor
 	result.NumVertices = ArrayCount(vertices) / 8;
 	result.VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	result.Model = glm::mat4(1.0f);
+	result.Trans = Transform::Blank();
 
 	return result;
 }
