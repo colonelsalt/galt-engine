@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 
 #include "Shader.cpp"
+#include "Primitives.cpp"
+#include "Camera.cpp"
 
 extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* input)
 {
@@ -23,9 +25,9 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 			 0.5f, 0.0f, 0.0f		
 		};
 
-		glGenVertexArrays(1, &state->VertexArrayId);
+		glGenVertexArrays(1, &state->TestVertexArrayId);
 
-		glBindVertexArray(state->VertexArrayId);
+		glBindVertexArray(state->TestVertexArrayId);
 
 		uint32_t vertexBuffer;
 		glGenBuffers(1, &vertexBuffer);
@@ -35,9 +37,14 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
 		Shader* testShader = &state->TestShader;
-
 		testShader->CompileProgram("BasicVert.glsl", "BasicFrag.glsl", memory);
 
+		Shader* primitiveShader = &state->PrimitiveShader;
+		primitiveShader->CompileProgram("PrimitiveVert.glsl",
+		                                "PrimitiveFrag.glsl",
+		                                memory);
+		state->FpsCamera = CreateCamera();
+		state->Plane = CreatePlane(testShader);
 		memory->IsInitialised = true;
 	}
 
@@ -51,49 +58,46 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	constexpr float moveSpeed = 0.001f;
 	if (input->Up)
 	{
-		state->PlayerY += moveSpeed;
+		state->PlayerPos.y += moveSpeed;
 	}
 	if (input->Down)
 	{
-		state->PlayerY -= moveSpeed;
+		state->PlayerPos.y -= moveSpeed;
 	}
 	if (input->Left)
 	{
-		state->PlayerX -= moveSpeed;
+		state->PlayerPos.x -= moveSpeed;
 	}
 	if (input->Right)
 	{
-		state->PlayerX += moveSpeed;
+		state->PlayerPos.x += moveSpeed;
 	}
+	state->FpsCamera.Update(input);
 	
-	// Clamping
-	if (state->PlayerX > 1.0f)
-	{
-		state->PlayerX = 1.0f;
-	}
-	if (state->PlayerX < -1.0f)
-	{
-		state->PlayerX = -1.0f;
-	}
-	if (state->PlayerY > 1.0f)
-	{
-		state->PlayerY = 1.0f;
-	}
-	if (state->PlayerY < -1.0f)
-	{
-		state->PlayerY = -1.0f;
-	}
+	state->PlayerPos.x = glm::clamp(state->PlayerPos.x, -1.0f, 1.0f);
+	state->PlayerPos.y = glm::clamp(state->PlayerPos.y, -1.0f, 1.0f);
 
+	// Rendering ---
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glBindVertexArray(state->VertexArrayId);
+	glBindVertexArray(state->Plane.VertexArrayId);
+	state->PrimitiveShader.Bind();
+
+	state->PrimitiveShader.SetMat4("u_Projection", state->FpsCamera.Projection);
+	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
+	state->PrimitiveShader.SetMat4("u_Model", state->Plane.Model);
+
+	glDrawArrays(GL_TRIANGLES, 0, state->Plane.NumVertices);
+
+#if 0
+	glBindVertexArray(state->TestVertexArrayId);
 	state->TestShader.Bind();
-	state->TestShader.SetFloat("u_OffsetX", state->PlayerX);
-	state->TestShader.SetFloat("u_OffsetY", state->PlayerY);
+	state->TestShader.SetVec2("u_Offset", state->PlayerPos);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
+#endif
 	glBindVertexArray(0);
 
 }

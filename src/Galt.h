@@ -2,8 +2,11 @@
 
 #include <stdint.h>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 #include "Shader.h"
+#include "Primitives.h"
+#include "Camera.h"
 
 struct FileResult
 {
@@ -14,33 +17,6 @@ struct FileResult
 typedef FileResult ReadFileFunc(const char* fileName);
 typedef void FreeFileMemoryFunc(void* memory);
 typedef int64_t GetLastWriteTimeFunc(char* fileName);
-
-struct ControllerInput
-{
-	bool IsConnected;
-	bool IsAnalogue;
-
-	union
-	{
-		bool Buttons[10];
-		struct
-		{
-			bool Up;
-			bool Down;
-			bool Left;
-			bool Right;
-
-			bool A;
-			bool B;
-			bool X;
-			bool Y;
-
-			bool Start;
-			bool Back;
-		};
-	};
-};
-
 
 struct GameMemory
 {
@@ -76,17 +52,19 @@ struct GameMemory
 
 struct GameState
 {
-	uint32_t VertexArrayId;
+	uint32_t TestVertexArrayId;
+	glm::vec2 PlayerPos;
 
-	float PlayerX;
-	float PlayerY;
+	Camera FpsCamera;
+	Primitive Plane;
 
 	union
 	{
-		Shader Shaders[1];
+		Shader Shaders[2];
 		struct
 		{
 			Shader TestShader;
+			Shader PrimitiveShader;
 		};
 	};
 };

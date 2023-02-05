@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 static constexpr char* SHADERS_DIR = "src/shaders/";
 
 void Shader::ReloadIfNeeded(GameMemory* memory)
@@ -105,4 +107,16 @@ void Shader::SetFloat(const char* name, float value)
 {
 	int location = glGetUniformLocation(RendererId, name);
 	glUniform1f(location, value);
+}
+
+void Shader::SetVec2(const char* name, const glm::vec2& value)
+{
+	int location = glGetUniformLocation(RendererId, name);
+	glUniform2fv(location, 1, glm::value_ptr(value));
+}
+
+void Shader::SetMat4(const char* name, const glm::mat4& value)
+{
+	int location = glGetUniformLocation(RendererId, name);
+	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }

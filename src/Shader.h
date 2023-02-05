@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 #include "Defines.h"
 
@@ -30,4 +31,6 @@ struct Shader
 
 	void SetInt(const char* name, int value);
 	void SetFloat(const char* name, float value);
+	void SetVec2(const char* name, const glm::vec2& value);
+	void SetMat4(const char* name, const glm::mat4& value);
 };

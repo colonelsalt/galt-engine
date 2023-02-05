@@ -5,6 +5,8 @@
 
 #include "Win_Galt.h"
 
+static float s_LastFrameTime;
+
 constexpr int SCREEN_WIDTH = 1280;
 constexpr int SCREEN_HEIGHT = 720;
 
@@ -139,6 +141,8 @@ void GetKeyboardInput(GLFWwindow* window, ControllerInput* input)
 	input->Right = glfwGetKey(window, GLFW_KEY_D);
 	input->Left = glfwGetKey(window, GLFW_KEY_A);
 
+	input->LeftShoulder = glfwGetKey(window, GLFW_KEY_Q);
+	input->RightShoulder = glfwGetKey(window, GLFW_KEY_E);
 	input->Back = glfwGetKey(window, GLFW_KEY_ESCAPE);
 }
 
@@ -227,6 +231,9 @@ int CALLBACK WinMain(HINSTANCE instance,
 	while (!glfwWindowShouldClose(window))
 	{
 		ControllerInput input = {};
+		float timeNow = (float)glfwGetTime();
+		input.DeltaTime = timeNow - s_LastFrameTime;
+		s_LastFrameTime = timeNow;
 
 		// Check if game code DLL needs reloading
 		FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
