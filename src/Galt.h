@@ -53,7 +53,6 @@ struct GameMemory
 struct GameState
 {
 	uint32_t TestVertexArrayId;
-	glm::vec2 PlayerPos;
 
 	Camera FpsCamera;
 	Primitive Plane;

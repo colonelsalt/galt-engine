@@ -5,7 +5,11 @@ struct ControllerInput
 	bool IsConnected;
 	bool IsAnalogue;
 	
+	float CameraAxisX;
+	float CameraAxisY;
+
 	float DeltaTime;
+	ControllerInput* LastInput;
 
 	union
 	{

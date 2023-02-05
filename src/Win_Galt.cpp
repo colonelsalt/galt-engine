@@ -146,6 +146,14 @@ void GetKeyboardInput(GLFWwindow* window, ControllerInput* input)
 	input->Back = glfwGetKey(window, GLFW_KEY_ESCAPE);
 }
 
+void GetMouseInput(GLFWwindow* window, ControllerInput* input)
+{
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+	input->CameraAxisX = (float)mouseX;
+	input->CameraAxisY = (float)mouseY;
+}
+
 
 int CALLBACK WinMain(HINSTANCE instance,
                      HINSTANCE prevInstance,
@@ -222,17 +230,27 @@ int CALLBACK WinMain(HINSTANCE instance,
 	Assert(window);
 	glfwMakeContextCurrent(window);
 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if (glfwRawMouseMotionSupported())
+	{
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
+
 	Assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
 
 	WinGameCode game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
 
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+	ControllerInput input[2] = {0};
+	ControllerInput* newInput = &input[0];
+	ControllerInput* oldInput = &input[1];
+	newInput->LastInput = oldInput;
+
 	while (!glfwWindowShouldClose(window))
 	{
-		ControllerInput input = {};
 		float timeNow = (float)glfwGetTime();
-		input.DeltaTime = timeNow - s_LastFrameTime;
+		newInput->DeltaTime = timeNow - s_LastFrameTime;
 		s_LastFrameTime = timeNow;
 
 		// Check if game code DLL needs reloading
@@ -244,16 +262,23 @@ int CALLBACK WinMain(HINSTANCE instance,
 			gameMemory.OpenGlInitialised = false;
 		}
 
-		GetKeyboardInput(window, &input);
-		if (input.Back)
+		GetKeyboardInput(window, newInput);
+		GetMouseInput(window, newInput);
+		if (newInput->Back)
 		{
 			break;
 		}
 
 		if (game.UpdateAndRender)
 		{
-			game.UpdateAndRender(&gameMemory, &input);
+			game.UpdateAndRender(&gameMemory, newInput);
 		}
+
+		ControllerInput* temp = newInput;
+		newInput = oldInput;
+		oldInput = temp;
+
+		newInput->LastInput = oldInput;
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

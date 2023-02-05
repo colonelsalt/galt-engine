@@ -22,5 +22,8 @@ struct Camera
 	// Right direction is just cached to avoid needing to cross product every frame
 	glm::vec3 Right;
 
+	float Pitch;
+	float Yaw;
+
 	void Update(ControllerInput* input);
 };

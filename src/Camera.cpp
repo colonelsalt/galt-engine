@@ -9,7 +9,7 @@ static Camera CreateCamera()
 	result.Up = { 0.0f, 1.0f, 0.0f };
 	result.Right = { 1.0f, 0.0f, 0.0f };
 
-	result.Sensitivity = 0.1f;
+	result.Sensitivity = 0.001f;
 	result.MoveSpeed = 2.5f;
 
 	result.Fov = glm::pi<float>() / 4.0f;
@@ -24,6 +24,20 @@ static Camera CreateCamera()
 void Camera::Update(ControllerInput* input)
 {
 	float speed = MoveSpeed * input->DeltaTime;
+
+	float xOffset = (input->CameraAxisX - input->LastInput->CameraAxisX) * Sensitivity;
+	float yOffset = (input->LastInput->CameraAxisY - input->CameraAxisY) * Sensitivity;
+
+	Yaw += xOffset;
+	Pitch = glm::clamp(Pitch + yOffset, -glm::pi<float>() / 2.0f, glm::pi<float>() / 2.0f);
+
+	Forward = {};
+	Forward.x = glm::cos(Yaw) * glm::cos(Pitch);
+	Forward.y = glm::sin(Pitch);
+	Forward.z = glm::sin(Yaw) * glm::cos(Pitch);
+	Forward = glm::normalize(Forward);
+
+	Right = glm::normalize(glm::cross(Forward, Up));
 
 	if (input->Up)
 	{
@@ -43,12 +57,12 @@ void Camera::Update(ControllerInput* input)
 	}
 	if (input->LeftShoulder)
 	{
-		Position += speed * Up;
+		Position -= speed * Up;
 	}
 	if (input->RightShoulder)
 	{
-		Position -= speed * Up;
+		Position += speed * Up;
 	}
 
-	View = glm::translate(glm::mat4(1.0f), -Position);
+	View = glm::lookAt(Position, Position + Forward, Up);
 }

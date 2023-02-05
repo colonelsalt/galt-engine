@@ -55,27 +55,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		shader->ReloadIfNeeded(memory);
 	}
 
-	constexpr float moveSpeed = 0.001f;
-	if (input->Up)
-	{
-		state->PlayerPos.y += moveSpeed;
-	}
-	if (input->Down)
-	{
-		state->PlayerPos.y -= moveSpeed;
-	}
-	if (input->Left)
-	{
-		state->PlayerPos.x -= moveSpeed;
-	}
-	if (input->Right)
-	{
-		state->PlayerPos.x += moveSpeed;
-	}
 	state->FpsCamera.Update(input);
-	
-	state->PlayerPos.x = glm::clamp(state->PlayerPos.x, -1.0f, 1.0f);
-	state->PlayerPos.y = glm::clamp(state->PlayerPos.y, -1.0f, 1.0f);
 
 	// Rendering ---
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
