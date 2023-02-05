@@ -6,9 +6,10 @@
 #include "Win_Galt.h"
 
 static float s_LastFrameTime;
+static bool s_PendingScreenResize;
 
-constexpr int SCREEN_WIDTH = 1280;
-constexpr int SCREEN_HEIGHT = 720;
+static int s_ScreenWidth = 1280;
+static int s_ScreenHeight = 720;
 
 inline FILETIME WinGetLastWriteTime(char* fileName)
 {
@@ -154,6 +155,13 @@ void GetMouseInput(GLFWwindow* window, ControllerInput* input)
 	input->CameraAxisY = (float)mouseY;
 }
 
+void WinFrameBufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+	s_PendingScreenResize = true;
+	s_ScreenWidth = width;
+	s_ScreenHeight = height;
+}
+
 
 int CALLBACK WinMain(HINSTANCE instance,
                      HINSTANCE prevInstance,
@@ -209,6 +217,10 @@ int CALLBACK WinMain(HINSTANCE instance,
 	gameMemory.GladLoader = (GLADloadproc)glfwGetProcAddress;
 	gameMemory.GetLastWriteTime = WinGetLastWriteTimeExtern;
 
+	gameMemory.PendingScreenResize = true;
+	gameMemory.ScreenWidth = s_ScreenWidth;
+	gameMemory.ScreenHeight = s_ScreenHeight;
+
 	Assert(gameMemory.PermStorage);
 	Assert(gameMemory.TempStorage);
 
@@ -223,7 +235,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	glfwWindowHint(GLFW_BLUE_BITS, videoMode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, videoMode->refreshRate);
 
-	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT,
+	GLFWwindow* window = glfwCreateWindow(s_ScreenWidth, s_ScreenHeight,
 	                                      "Galt engine",
 	                                      nullptr,
 	                                      nullptr);
@@ -235,12 +247,9 @@ int CALLBACK WinMain(HINSTANCE instance,
 	{
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
-
-	Assert(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress));
+	glfwSetFramebufferSizeCallback(window, WinFrameBufferSizeCallback);
 
 	WinGameCode game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
-
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	ControllerInput input[2] = {0};
 	ControllerInput* newInput = &input[0];
@@ -267,6 +276,14 @@ int CALLBACK WinMain(HINSTANCE instance,
 		if (newInput->Back)
 		{
 			break;
+		}
+
+		if (s_PendingScreenResize)
+		{
+			gameMemory.ScreenWidth = s_ScreenWidth;
+			gameMemory.ScreenHeight = s_ScreenHeight;
+			gameMemory.PendingScreenResize = true;
+			s_PendingScreenResize = false;
 		}
 
 		if (game.UpdateAndRender)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include "Defines.h"
@@ -24,10 +23,7 @@ struct Shader
 
 	void ReloadIfNeeded(GameMemory* memory);
 
-	inline void Bind()
-	{
-		glUseProgram(RendererId);
-	}
+	inline void Bind();
 
 	void SetInt(const char* name, int value);
 	void SetFloat(const char* name, float value);

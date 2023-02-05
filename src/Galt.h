@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glad/glad.h>
 
 #include "Shader.h"
 #include "Primitives.h"
@@ -22,6 +22,7 @@ struct GameMemory
 {
 	bool IsInitialised;
 	bool OpenGlInitialised;
+	bool PendingScreenResize;
 
 	uint64_t PermStorageSize;
 	void* PermStorage;
@@ -35,6 +36,8 @@ struct GameMemory
 	GLADloadproc GladLoader;
 	GetLastWriteTimeFunc* GetLastWriteTime;
 
+	int ScreenWidth;
+	int ScreenHeight;
 
 	inline void ResetTempMemory()
 	{

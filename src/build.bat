@@ -7,6 +7,7 @@ set Defines=/DGALT_INTERNAL
 
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
-cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Galt.cpp ..\lib\glad.c /LD /link /SUBSYSTEM:WINDOWS -incremental:no -opt:ref /PDB:galt_%random%.pdb /LIBPATH:%LibPath% %Libs%
-cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Win_Galt.cpp ..\lib\glad.c /link /SUBSYSTEM:WINDOWS -incremental:no -opt:ref /LIBPATH:%LibPath% %Libs%
+del *.pdb
+cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Galt.cpp /LD /link /SUBSYSTEM:WINDOWS /PDB:galt_%random%.pdb /LIBPATH:%LibPath% %Libs%
+cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Win_Galt.cpp /link /SUBSYSTEM:WINDOWS /LIBPATH:%LibPath% %Libs%
 popd

@@ -1,7 +1,6 @@
 #include "Galt.h"
 
-#include <glad/glad.h>
-
+#include "glad/glad.c"
 #include "Shader.cpp"
 #include "Primitives.cpp"
 #include "Camera.cpp"
@@ -14,6 +13,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	{
 		gladLoadGLLoader(memory->GladLoader);
 		memory->OpenGlInitialised = true;
+	}
+	if (memory->PendingScreenResize)
+	{
+		glViewport(0, 0, memory->ScreenWidth, memory->ScreenHeight);
+		memory->PendingScreenResize = false;
 	}
 
 	GameState* state = (GameState*)memory->PermStorage;

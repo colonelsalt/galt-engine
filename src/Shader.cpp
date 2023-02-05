@@ -16,6 +16,11 @@ void Shader::ReloadIfNeeded(GameMemory* memory)
 	}
 }
 
+inline void Shader::Bind()
+{
+	glUseProgram(RendererId);
+}
+
 static uint32_t CompileShader(const char* source, GLenum type)
 {
 	uint32_t shaderId = glCreateShader(type);
