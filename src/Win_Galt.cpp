@@ -135,7 +135,7 @@ void WinFreeFileMemory(void* memory)
 	VirtualFree(memory, 0, MEM_RELEASE);
 }
 
-void GetKeyboardInput(GLFWwindow* window, ControllerInput* input)
+void WinGetKeyboardInput(GLFWwindow* window, ControllerInput* input)
 {
 	input->Up = glfwGetKey(window, GLFW_KEY_W);
 	input->Down = glfwGetKey(window, GLFW_KEY_S);
@@ -147,7 +147,7 @@ void GetKeyboardInput(GLFWwindow* window, ControllerInput* input)
 	input->Back = glfwGetKey(window, GLFW_KEY_ESCAPE);
 }
 
-void GetMouseInput(GLFWwindow* window, ControllerInput* input)
+void WinGetMouseInput(GLFWwindow* window, ControllerInput* input)
 {
 	double mouseX, mouseY;
 	glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -254,6 +254,11 @@ int CALLBACK WinMain(HINSTANCE instance,
 	ControllerInput input[2] = {0};
 	ControllerInput* newInput = &input[0];
 	ControllerInput* oldInput = &input[1];
+
+	// Pre-fill current mouse position to prevent camera jump on first frame
+	WinGetMouseInput(window, newInput);
+	WinGetMouseInput(window, oldInput);
+
 	newInput->LastInput = oldInput;
 
 	while (!glfwWindowShouldClose(window))
@@ -271,8 +276,8 @@ int CALLBACK WinMain(HINSTANCE instance,
 			gameMemory.OpenGlInitialised = false;
 		}
 
-		GetKeyboardInput(window, newInput);
-		GetMouseInput(window, newInput);
+		WinGetKeyboardInput(window, newInput);
+		WinGetMouseInput(window, newInput);
 		if (newInput->Back)
 		{
 			break;

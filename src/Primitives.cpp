@@ -2,6 +2,22 @@
 
 #include <glad/glad.h>
 
+#include "Textures.h"
+
+void Primitive::Draw()
+{
+	glBindVertexArray(VertexArrayId);
+	_Shader->Bind();
+	_Shader->SetMat4("u_Model", Model);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureId);
+	_Shader->SetInt("u_Texture", 0);
+
+
+	glDrawArrays(GL_TRIANGLES, 0, NumVertices);
+}
+
 static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t verticesSize)
 {
 	uint32_t vertexArrayId;
@@ -25,10 +41,12 @@ static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t vertices
 	return vertexArrayId;
 }
 
-static Primitive CreatePlane(Shader* shader)
+static Primitive CreatePlane(Shader* shader, char* textureName, GameMemory* memory)
 {
 	Primitive result = {};
 	result._Shader = shader;
+
+	result.TextureId = LoadTexture(textureName, memory);
 
 	constexpr float vertices[] = 
 	{
@@ -49,10 +67,12 @@ static Primitive CreatePlane(Shader* shader)
 	return result;
 }
 
-static Primitive CreateCube(Shader* shader)
+static Primitive CreateCube(Shader* shader, char* textureName, GameMemory* memory)
 {
 	Primitive result = {};
 	result._Shader = shader;
+
+	result.TextureId = LoadTexture(textureName, memory);
 
 	constexpr float vertices[] = {
 		// back face

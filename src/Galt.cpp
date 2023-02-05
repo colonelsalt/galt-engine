@@ -4,6 +4,10 @@
 #include "Shader.cpp"
 #include "Primitives.cpp"
 #include "Camera.cpp"
+#include "Textures.cpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* input)
 {
@@ -30,8 +34,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		                                "PrimitiveFrag.glsl",
 		                                memory);
 		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane(primitiveShader);
-		state->Cube = CreateCube(primitiveShader);
+		state->Plane = CreatePlane(primitiveShader, "wood.png", memory);
+		state->Cube = CreateCube(primitiveShader, "container.png", memory);
 		memory->IsInitialised = true;
 	}
 
@@ -48,28 +52,15 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glBindVertexArray(state->Plane.VertexArrayId);
 	state->PrimitiveShader.Bind();
 
 	state->PrimitiveShader.SetMat4("u_Projection", state->FpsCamera.Projection);
 	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
-	state->PrimitiveShader.SetMat4("u_Model", state->Plane.Model);
 
-	state->PrimitiveShader.SetVec3("u_Colour", { 1.0f, 0.0f, 0.0f });
-	glDrawArrays(GL_TRIANGLES, 0, state->Plane.NumVertices);
+	state->Plane.Draw();
 
-	glBindVertexArray(state->Cube.VertexArrayId);
-	state->PrimitiveShader.SetVec3("u_Colour", { 1.0f, 1.0f, 0.0f });
-	glDrawArrays(GL_TRIANGLES, 0, state->Cube.NumVertices);
+	state->Cube.Draw();
 
-#if 0
-	glBindVertexArray(state->TestVertexArrayId);
-	state->TestShader.Bind();
-	state->TestShader.SetVec2("u_Offset", state->PlayerPos);
-
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-#endif
 	glBindVertexArray(0);
 
 }
