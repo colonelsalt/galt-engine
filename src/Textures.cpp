@@ -25,7 +25,8 @@ uint32_t LoadTexture(TextureParams* texParams, GameMemory* memory)
 		texParams->DirectoryPath = DEFAULT_DIRECTORY;
 	}
 
-	char* path = CatStrTemp(texParams->DirectoryPath, texParams->FileName, memory);
+	char path[PATH_MAX];
+	CatStr(texParams->DirectoryPath, texParams->FileName, path);
 
 	stbi_set_flip_vertically_on_load(texParams->FlipVertically);
 	int width, height, numChannels;

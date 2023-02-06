@@ -8,6 +8,6 @@ set Defines=/DGALT_INTERNAL
 IF NOT EXIST ..\build mkdir ..\build
 pushd ..\build
 del *.pdb
-cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Galt.cpp /LD /link /SUBSYSTEM:WINDOWS /PDB:galt_%random%.pdb /LIBPATH:%LibPath% %Libs%
+cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Galt.cpp /LD /link /SUBSYSTEM:WINDOWS /PDB:galt_%random%.pdb /LIBPATH:%LibPath% %Libs% assimp-vc143-mtd.lib
 cl /MTd /std:c++17 /nologo /Gm- /GR- /EHsc /Od /Oi /W3 /FC /Zi %Defines% /I%IncludePath% ..\src\Win_Galt.cpp /link /SUBSYSTEM:WINDOWS /LIBPATH:%LibPath% %Libs%
 popd

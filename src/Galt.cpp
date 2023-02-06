@@ -6,6 +6,7 @@
 #include "Camera.cpp"
 #include "Textures.cpp"
 #include "Transform.cpp"
+#include "Mesh.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -38,10 +39,12 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		state->Plane = CreatePlane(primitiveShader, "wood.png", memory);
 		state->Cube = CreateCube(primitiveShader, "container.png", memory);
 		state->Cube.Trans.Translation.y = 0.5001f;
+
+		LoadMesh("Lamp/Lamp.fbx", &state->LampMesh, memory);
+
 		memory->IsInitialised = true;
 	}
 
-	memory->ResetTempMemory();
 	for (int i = 0; i < ArrayCount(state->Shaders); i++)
 	{
 		Shader* shader = &state->Shaders[i];
@@ -63,6 +66,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	state->Plane.Draw();
 
 	state->Cube.Draw();
+
+	state->LampMesh.Draw(&state->PrimitiveShader);
 
 	glBindVertexArray(0);
 

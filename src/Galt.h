@@ -7,6 +7,7 @@
 #include "Shader.h"
 #include "Primitives.h"
 #include "Camera.h"
+#include "Mesh.h"
 
 struct FileResult
 {
@@ -39,11 +40,6 @@ struct GameMemory
 	int ScreenWidth;
 	int ScreenHeight;
 
-	inline void ResetTempMemory()
-	{
-		TempStorageCursor = 0;
-	}
-
 	inline void* TempAlloc(size_t numBytes)
 	{
 		void* result = (uint8_t*)TempStorage + TempStorageCursor;
@@ -60,6 +56,7 @@ struct GameState
 	Camera FpsCamera;
 	Primitive Plane;
 	Primitive Cube;
+	Mesh LampMesh;
 
 	union
 	{
@@ -84,6 +81,19 @@ inline size_t StrLen(const char* s)
 	return length;
 }
 
+inline int LastIndexOf(const char* s, char c)
+{
+	int lastIndex = -1;
+	for (int i = 0; s[i]; i++)
+	{
+		if (s[i] == c)
+		{
+			lastIndex = i;
+		}
+	}
+	return lastIndex;
+}
+
 inline void CatStr(const char* s1, const char* s2, char* dest)
 {
 	int resultIndex = 0;
@@ -96,23 +106,6 @@ inline void CatStr(const char* s1, const char* s2, char* dest)
 		dest[resultIndex++] = s2[i];
 	}
 	dest[resultIndex] = 0;
-}
-
-inline static char* CatStrTemp(const char* s1, const char* s2, GameMemory* memory)
-{
-	size_t length = StrLen(s1) + StrLen(s2) + 1;
-	char* result = (char*)memory->TempAlloc(length);
-	int resultIndex = 0;
-	for (int i = 0; s1[i]; i++)
-	{
-		result[resultIndex++] = s1[i];
-	}
-	for (int i = 0; s2[i]; i++)
-	{
-		result[resultIndex++] = s2[i];
-	}
-	result[resultIndex] = 0;
-	return result;
 }
 
 typedef void GAME_API GameUpdateFunc(GameMemory*, ControllerInput*);

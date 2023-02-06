@@ -7,6 +7,11 @@ struct TextureParams
 	bool FlipVertically;
 	bool UseGammaCorrection;
 	int WrappingOption;
+
+	inline static int DefaultWrapping()
+	{
+		return GL_REPEAT;
+	}
 };
 
 uint32_t LoadTexture(char* fileName, GameMemory* memory);

@@ -248,6 +248,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 	glfwSetFramebufferSizeCallback(window, WinFrameBufferSizeCallback);
+	glfwMaximizeWindow(window);
 
 	WinGameCode game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
 

@@ -2,8 +2,6 @@
 
 #include <glm/glm.hpp>
 
-constexpr int MAX_TRANSFORM_CHILDREN = 3;
-
 struct Transform
 {
 	glm::vec3 Translation;
@@ -12,7 +10,8 @@ struct Transform
 
 	// TODO
 	Transform* Parent;
-	Transform* Children[MAX_TRANSFORM_CHILDREN];
+	Transform** Children;
+	uint32_t NumChildren;
 
 	inline static Transform Blank()
 	{
