@@ -38,7 +38,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		state->FpsCamera = CreateCamera();
 		state->Plane = CreatePlane(primitiveShader, "wood.png", memory);
 		state->Cube = CreateCube(primitiveShader, "container.png", memory);
-		state->Cube.Trans.Translation.y = 0.5001f;
+		state->Cube.Trans.Translation()->y = 0.5001f;
 
 		LoadMesh("Lamp/Lamp.fbx", &state->LampMesh, memory);
 

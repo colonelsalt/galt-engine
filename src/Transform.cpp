@@ -1,15 +1,17 @@
 #include "Transform.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/euler_angles.inl>
+#include <glm/gtx/euler_angles.hpp>
 
-glm::mat4 Transform::ToModel()
+void Transform::SetRotation(float yaw, float pitch, float roll)
 {
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), Translation);
-		
-	glm::mat4 rot = glm::yawPitchRoll(EulerRotation.y,
-	                                  EulerRotation.x,
-	                                  EulerRotation.z);
+	glm::vec3* translation = Translation();
+	glm::vec3 scale = GetScale();
 
-	return trans * rot * glm::scale(glm::mat4(1.0f), Scale);
+	glm::mat4 rotation = glm::yawPitchRoll(glm::radians(yaw),
+	                                       glm::radians(pitch),
+	                                       glm::radians(roll));
+
+	Model = glm::translate(glm::mat4(1.0f), *translation);
+	Model *= rotation;
+	Model *= glm::scale(glm::mat4(1.0f), scale);
 }
