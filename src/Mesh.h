@@ -22,9 +22,8 @@ struct MeshTexture
 	TextureType Type;
 };
 
-struct Mesh
+struct MeshComponent
 {
-	glm::mat4 Trans;
 	uint32_t VertexArrayId;
 
 	uint32_t NumVertices;
@@ -34,12 +33,11 @@ struct Mesh
 	Vertex* a_Vertices;
 	uint32_t* a_Indices;
 
-	uint32_t NumChildren;
-	Mesh* a_Children;
-	Mesh* p_Parent;
-
 	uint32_t NumTextures;
 	MeshTexture* a_Textures;
+
+	// TODO: This seems a little hacky - consider doing full ECS later
+	Entity* p_Entity;
 
 	void Draw(Shader* shader);
 };

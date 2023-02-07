@@ -2,9 +2,27 @@
 
 #include <glm/glm.hpp>
 
-struct Transform
+struct Entity;
+
+struct TransformComponent
 {
 	glm::mat4 Model;
+
+	TransformComponent* p_Parent;
+	TransformComponent** a_Children;
+	uint32_t NumChildren;
+
+	// TODO: This seems a little hacky - consider doing full ECS later
+	Entity* p_Entity;
+
+	inline glm::mat4 WorldSpace()
+	{
+		if (!p_Parent)
+		{
+			return Model;
+		}
+		return p_Parent->WorldSpace() * Model;
+	}
 
 	inline glm::vec3* Translation()
 	{
@@ -29,16 +47,11 @@ struct Transform
 		Model[2][2] = scale.z;
 	}
 
-	inline static Transform Identity()
+	inline static TransformComponent Identity()
 	{
 		return { glm::mat4(1.0f) };
 	}
 
 	void SetRotation(float yaw, float pitch, float roll);
-
-	// TODO
-	//Transform* Parent;
-	//Transform** Children;
-	//uint32_t NumChildren;
 
 };

@@ -7,6 +7,7 @@
 #include "Textures.cpp"
 #include "Transform.cpp"
 #include "Mesh.cpp"
+#include "Entity.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -36,11 +37,16 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		                                "PrimitiveFrag.glsl",
 		                                memory);
 		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane(primitiveShader, "wood.png", memory);
-		state->Cube = CreateCube(primitiveShader, "container.png", memory);
-		state->Cube.Trans.Translation()->y = 0.5001f;
+		CreatePlane(&state->Plane, primitiveShader, "wood.png", memory);
+		CreateCube(&state->Cube, primitiveShader, "container.png", memory);
+		state->Cube.Transform.Translation()->y = 0.5001f;
 
-		LoadMesh("Lamp/Lamp.fbx", &state->LampMesh, memory);
+		LoadMesh("Lamp/Lamp.fbx", &state->Lamp, memory);
+		glm::vec3* lampPos = state->Lamp.Transform.Translation();
+		*lampPos = { 3.0f, -0.5f, 1.0f };
+		state->Lamp.Transform.SetRotation(0.0f, -90.0f, 0.0f);
+
+
 
 		memory->IsInitialised = true;
 	}
@@ -63,11 +69,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
 
 
-	state->Plane.Draw();
+	state->Plane.Draw(&state->PrimitiveShader);
 
-	state->Cube.Draw();
+	state->Cube.Draw(&state->PrimitiveShader);
 
-	state->LampMesh.Draw(&state->PrimitiveShader);
+	state->Lamp.Draw(&state->PrimitiveShader);
 
 	glBindVertexArray(0);
 

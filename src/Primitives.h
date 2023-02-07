@@ -4,7 +4,7 @@
 
 #include "Transform.h"
 
-struct Primitive
+struct PrimitiveComponent
 {
 	uint32_t VertexArrayId;
 	Shader* _Shader;
@@ -12,7 +12,8 @@ struct Primitive
 
 	uint32_t TextureId;
 
-	Transform Trans;
+	// TODO: This seems a little hacky - consider doing full ECS later
+	Entity* p_Entity;
 
 	void Draw();
 };

@@ -8,6 +8,7 @@
 #include "Primitives.h"
 #include "Camera.h"
 #include "Mesh.h"
+#include "Entity.h"
 
 struct FileResult
 {
@@ -54,9 +55,9 @@ struct GameState
 	uint32_t TestVertexArrayId;
 
 	Camera FpsCamera;
-	Primitive Plane;
-	Primitive Cube;
-	Mesh LampMesh;
+	Entity Plane;
+	Entity Cube;
+	Entity Lamp;
 
 	union
 	{

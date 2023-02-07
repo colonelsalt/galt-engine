@@ -4,11 +4,13 @@
 
 #include "Textures.h"
 
-void Primitive::Draw()
+void PrimitiveComponent::Draw()
 {
+	Assert(p_Entity);
+
 	glBindVertexArray(VertexArrayId);
 	_Shader->Bind();
-	_Shader->SetMat4("u_Model", Trans.Model);
+	_Shader->SetMat4("u_Model", p_Entity->Transform.WorldSpace());
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureId);
@@ -41,12 +43,20 @@ static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t vertices
 	return vertexArrayId;
 }
 
-static Primitive CreatePlane(Shader* shader, char* textureName, GameMemory* memory)
+static void CreatePlane(Entity* outEntity,
+                        Shader* shader,
+                        char* textureName,
+                        GameMemory* memory)
 {
-	Primitive result = {};
-	result._Shader = shader;
+	outEntity->Type = RenderType::PRIMITIVE;
+	outEntity->Transform = TransformComponent::Identity();
 
-	result.TextureId = LoadTexture(textureName, memory);
+	PrimitiveComponent* primitive = &outEntity->Primitive;
+	*primitive = {};
+
+	primitive->_Shader = shader;
+
+	primitive->TextureId = LoadTexture(textureName, memory);
 
 	constexpr float vertices[] = 
 	{
@@ -59,20 +69,26 @@ static Primitive CreatePlane(Shader* shader, char* textureName, GameMemory* memo
 		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
 		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
 	};
-	result.NumVertices = ArrayCount(vertices) / 8;
-	result.VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
+	primitive->NumVertices = ArrayCount(vertices) / 8;
+	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	result.Trans = Transform::Identity();
-
-	return result;
+	primitive->p_Entity = outEntity;
 }
 
-static Primitive CreateCube(Shader* shader, char* textureName, GameMemory* memory)
+static void CreateCube(Entity* outEntity,
+                       Shader* shader,
+                       char* textureName,
+                       GameMemory* memory)
 {
-	Primitive result = {};
-	result._Shader = shader;
+	outEntity->Type = RenderType::PRIMITIVE;
+	outEntity->Transform = TransformComponent::Identity();
 
-	result.TextureId = LoadTexture(textureName, memory);
+	PrimitiveComponent* primitive = &outEntity->Primitive;
+	*primitive = {};
+
+	primitive->_Shader = shader;
+
+	primitive->TextureId = LoadTexture(textureName, memory);
 
 	constexpr float vertices[] = {
 		// back face
@@ -118,10 +134,8 @@ static Primitive CreateCube(Shader* shader, char* textureName, GameMemory* memor
 		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
 		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
 	};
-	result.NumVertices = ArrayCount(vertices) / 8;
-	result.VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
+	primitive->NumVertices = ArrayCount(vertices) / 8;
+	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	result.Trans = Transform::Identity();
-
-	return result;
+	primitive->p_Entity = outEntity;
 }

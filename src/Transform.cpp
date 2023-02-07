@@ -2,7 +2,7 @@
 
 #include <glm/gtx/euler_angles.hpp>
 
-void Transform::SetRotation(float yaw, float pitch, float roll)
+void TransformComponent::SetRotation(float yaw, float pitch, float roll)
 {
 	glm::vec3* translation = Translation();
 	glm::vec3 scale = GetScale();
@@ -11,7 +11,8 @@ void Transform::SetRotation(float yaw, float pitch, float roll)
 	                                       glm::radians(pitch),
 	                                       glm::radians(roll));
 
+	//Model = rotation;
 	Model = glm::translate(glm::mat4(1.0f), *translation);
 	Model *= rotation;
-	Model *= glm::scale(glm::mat4(1.0f), scale);
+	//Model *= glm::scale(glm::mat4(1.0f), scale);
 }
