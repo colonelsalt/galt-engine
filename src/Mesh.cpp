@@ -22,8 +22,7 @@ static glm::mat4 AssimpToGlmMatrix(const aiMatrix4x4& assimpMatrix)
 static void LoadTextureFromMaterial(aiMaterial* material,
                                     const aiScene* scene,
                                     MeshComponent* outMesh,
-                                    char* directoryPath,
-                                    GameMemory* memory)
+                                    char* directoryPath)
 {
 	aiTextureType texType = aiTextureType_DIFFUSE;
 	for (uint32_t i = 0; i < material->GetTextureCount(texType); i++)
@@ -39,26 +38,27 @@ static void LoadTextureFromMaterial(aiMaterial* material,
 		texParams.FlipVertically = true;
 		texParams.WrappingOption = TextureParams::DefaultWrapping();
 
-		texture->TextureId = LoadTexture(&texParams, memory);
+		texture->TextureId = LoadTexture(&texParams);
 		texture->Type = TextureType::DIFFUSE;
 	}
 }
 
-static void ParseMesh(aiMesh* assimpMesh,
-                      Entity* outEntity, 
+static void ParseMesh(aiMesh* assimpMesh, 
                       const aiScene* scene,
-                      char* directoryPath,
-                      GameMemory* memory)
+                      Entity entity,
+                      char* directoryPath)
 {
-	outEntity->Type = RenderType::MESH;
-	MeshComponent* outMesh = &outEntity->Mesh;
-	outMesh->p_Entity = outEntity;
+	MeshComponent* outMesh = entity.AddMesh();
+	Assert(outMesh);
 
 	outMesh->NumVertices = assimpMesh->mNumVertices;
 	outMesh->NumIndices = 3 * assimpMesh->mNumFaces;
 	
-	outMesh->a_Vertices = (Vertex*)memory->TempAlloc(outMesh->NumVertices * sizeof(Vertex));
-	outMesh->a_Indices = (uint32_t*)memory->TempAlloc(outMesh->NumIndices * sizeof(uint32_t));
+	// TODO: Is this necessary if we're just sending them to the GPU?
+	outMesh->a_Vertices = (Vertex*)
+		g_Memory->TempAlloc(outMesh->NumVertices * sizeof(Vertex));
+	outMesh->a_Indices = (uint32_t*)
+		g_Memory->TempAlloc(outMesh->NumIndices * sizeof(uint32_t));
 
 	// Parse vertex data
 	for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
@@ -101,8 +101,8 @@ static void ParseMesh(aiMesh* assimpMesh,
 
 		uint32_t totalTextures = material->GetTextureCount(aiTextureType_DIFFUSE);
 		outMesh->a_Textures = (MeshTexture*)
-			memory->TempAlloc(totalTextures * sizeof(MeshTexture));
-		LoadTextureFromMaterial(material, scene, outMesh, directoryPath, memory);
+			g_Memory->TempAlloc(totalTextures * sizeof(MeshTexture));
+		LoadTextureFromMaterial(material, scene, outMesh, directoryPath);
 	}
 
 	glGenVertexArrays(1, &outMesh->VertexArrayId);
@@ -136,21 +136,13 @@ static void ParseMesh(aiMesh* assimpMesh,
 }
 
 static void ParseNode(aiNode* node,
-                      Entity* outEntity,
                       const aiScene* scene,
-                      char* directoryPath,
-                      GameMemory* memory)
+                      Entity entity,
+                      char* directoryPath)
 {
-	TransformComponent* transform = &outEntity->Transform;
-
-	transform->Model = glm::mat4(1.0f); //AssimpToGlmMatrix(node->mTransformation);
-	transform->NumChildren = node->mNumChildren;
-	transform->a_Children = (TransformComponent**)
-		memory->TempAlloc(transform->NumChildren * sizeof(TransformComponent*));
-	
-	// God this is awful
-	transform->p_Entity = outEntity;
-	outEntity->Mesh.p_Entity = outEntity;
+	TransformComponent* transform = entity.AddTransform();
+	Assert(transform);
+	transform->CompInit(node->mNumChildren);
 
 	for (uint32_t i = 0; i < node->mNumMeshes; i++)
 	{
@@ -158,20 +150,20 @@ static void ParseNode(aiNode* node,
 		Assert(assimpMesh);
 
 		// TODO: Handle submeshes properly
-		ParseMesh(assimpMesh, outEntity, scene, directoryPath, memory);
+		ParseMesh(assimpMesh, scene, entity, directoryPath);
 	}
 
 	for (uint32_t i = 0; i < node->mNumChildren; i++)
 	{
-		Entity* childEntity = (Entity*)memory->TempAlloc(sizeof(Entity));
-		outEntity->Transform.a_Children[i] = &childEntity->Transform;
-		childEntity->Transform.p_Parent = transform;
+		Entity childEntity = g_EntityMaster->CreateEntity();
 
-		ParseNode(node->mChildren[i], childEntity, scene, directoryPath, memory);
+		ParseNode(node->mChildren[i], scene, childEntity, directoryPath);
+		transform->a_Children[i] = childEntity.GetTransform();
+		transform->a_Children[i]->p_Parent = transform;
 	}
 }
 
-static void LoadMesh(const char* modelName, Entity* outEntity, GameMemory* memory)
+static Entity LoadMesh(const char* modelName)
 {
 	char filePath[PATH_MAX];
 	CatStr(MODELS_DIRECTORY, modelName, filePath);
@@ -191,13 +183,22 @@ static void LoadMesh(const char* modelName, Entity* outEntity, GameMemory* memor
 	int lastSlashIndex = LastIndexOf(filePath, '/');
 	filePath[lastSlashIndex + 1] = 0;
 
-	ParseNode(scene->mRootNode, outEntity, scene, filePath, memory);
+	Entity rootEntity = g_EntityMaster->CreateEntity();
+	ParseNode(scene->mRootNode, scene, rootEntity, filePath);
+	return rootEntity;
 }
 
 void MeshComponent::Draw(Shader* shader)
 {
 	glBindVertexArray(VertexArrayId);
 	shader->Bind();
+
+	Entity entity = { EntityId };
+	Assert(entity);
+	TransformComponent* transform = entity.GetTransform();
+	Assert(transform);
+
+	shader->SetMat4("u_Model", transform->WorldSpace());
 
 	Assert(NumTextures == 1);
 	glBindTexture(GL_TEXTURE_2D, a_Textures[0].TextureId);

@@ -22,7 +22,7 @@ struct MeshTexture
 	TextureType Type;
 };
 
-struct MeshComponent
+struct MeshComponent : public Component
 {
 	uint32_t VertexArrayId;
 
@@ -35,9 +35,6 @@ struct MeshComponent
 
 	uint32_t NumTextures;
 	MeshTexture* a_Textures;
-
-	// TODO: This seems a little hacky - consider doing full ECS later
-	Entity* p_Entity;
 
 	void Draw(Shader* shader);
 };

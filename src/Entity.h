@@ -1,22 +1,24 @@
 #pragma once
 
-#include "Transform.h"
-
-enum RenderType
-{
-	NONE = 0, PRIMITIVE = 1, MESH = 2
-};
-
 struct Entity
 {
-	TransformComponent Transform;
+	uint32_t Id;
 
-	RenderType Type;
-	union
+	operator uint32_t() const
 	{
-		MeshComponent Mesh;
-		PrimitiveComponent Primitive;
-	};
+		return Id;
+	}
 
-	void Draw(Shader* shader);
+	TransformComponent* AddTransform();
+
+	MeshComponent* AddMesh();
+
+	PrimitiveComponent* AddPrimitive();
+
+	TransformComponent* GetTransform();
+
+	MeshComponent* GetMesh();
+
+	PrimitiveComponent* GetPrimitive();
+
 };

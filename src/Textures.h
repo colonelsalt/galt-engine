@@ -14,5 +14,5 @@ struct TextureParams
 	}
 };
 
-uint32_t LoadTexture(char* fileName, GameMemory* memory);
-uint32_t LoadTexture(TextureParams* texParams, GameMemory* memory);
+static uint32_t LoadTexture(char* fileName);
+static uint32_t LoadTexture(TextureParams* texParams);

@@ -1,27 +1,31 @@
 #include "Entity.h"
 
-void Entity::Draw(Shader* shader)
+inline TransformComponent* Entity::AddTransform()
 {
-	if (Type != RenderType::NONE)
-	{
-		shader->Bind();
-		shader->SetMat4("u_Model", Transform.WorldSpace());
+	return g_EntityMaster->AddTransform(*this);
+}
 
-		if (Type == RenderType::PRIMITIVE)
-		{
-			Primitive.Draw();
-		}
-		else if (Type == RenderType::MESH)
-		{
-			Mesh.Draw(shader);
-		}
+inline MeshComponent* Entity::AddMesh()
+{
+	return g_EntityMaster->AddMesh(*this);
+}
 
-	}
+inline PrimitiveComponent* Entity::AddPrimitive()
+{
+	return g_EntityMaster->AddPrimitive(*this);
+}
 
-	for (uint32_t i = 0; i < Transform.NumChildren; i++)
-	{
-		Entity* child = Transform.a_Children[i]->p_Entity;
-		Assert(child);
-		child->Draw(shader);
-	}
+inline TransformComponent* Entity::GetTransform()
+{
+	return g_EntityMaster->GetTransform(*this);
+}
+
+inline MeshComponent* Entity::GetMesh()
+{
+	return g_EntityMaster->GetMesh(*this);
+}
+
+inline PrimitiveComponent* Entity::GetPrimitive()
+{
+	return g_EntityMaster->GetPrimitive(*this);
 }

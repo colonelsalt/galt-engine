@@ -6,11 +6,13 @@
 
 void PrimitiveComponent::Draw()
 {
-	Assert(p_Entity);
+	Entity thisEntity = { EntityId };
+	TransformComponent* transform = thisEntity.GetTransform();
+	Assert(transform);
 
 	glBindVertexArray(VertexArrayId);
 	_Shader->Bind();
-	_Shader->SetMat4("u_Model", p_Entity->Transform.WorldSpace());
+	_Shader->SetMat4("u_Model", transform->WorldSpace());
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, TextureId);
@@ -43,20 +45,18 @@ static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t vertices
 	return vertexArrayId;
 }
 
-static void CreatePlane(Entity* outEntity,
-                        Shader* shader,
-                        char* textureName,
-                        GameMemory* memory)
+static Entity CreatePlane(Shader* shader,
+                          char* textureName)
 {
-	outEntity->Type = RenderType::PRIMITIVE;
-	outEntity->Transform = TransformComponent::Identity();
+	Entity entity = g_EntityMaster->CreateEntity();
 
-	PrimitiveComponent* primitive = &outEntity->Primitive;
-	*primitive = {};
+	TransformComponent* transform = entity.AddTransform();
+	transform->CompInit();
+
+	PrimitiveComponent* primitive = entity.AddPrimitive();
 
 	primitive->_Shader = shader;
-
-	primitive->TextureId = LoadTexture(textureName, memory);
+	primitive->TextureId = LoadTexture(textureName);
 
 	constexpr float vertices[] = 
 	{
@@ -72,23 +72,23 @@ static void CreatePlane(Entity* outEntity,
 	primitive->NumVertices = ArrayCount(vertices) / 8;
 	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	primitive->p_Entity = outEntity;
+	return entity;
 }
 
-static void CreateCube(Entity* outEntity,
-                       Shader* shader,
-                       char* textureName,
-                       GameMemory* memory)
+static Entity CreateCube(Shader* shader,
+                         char* textureName)
 {
-	outEntity->Type = RenderType::PRIMITIVE;
-	outEntity->Transform = TransformComponent::Identity();
+	Entity entity = g_EntityMaster->CreateEntity();
 
-	PrimitiveComponent* primitive = &outEntity->Primitive;
-	*primitive = {};
+	TransformComponent* transform = entity.AddTransform();
+	Assert(transform);
+	transform->CompInit();
+
+	PrimitiveComponent* primitive = entity.AddPrimitive();
+	Assert(primitive);
 
 	primitive->_Shader = shader;
-
-	primitive->TextureId = LoadTexture(textureName, memory);
+	primitive->TextureId = LoadTexture(textureName);
 
 	constexpr float vertices[] = {
 		// back face
@@ -137,5 +137,5 @@ static void CreateCube(Entity* outEntity,
 	primitive->NumVertices = ArrayCount(vertices) / 8;
 	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 
-	primitive->p_Entity = outEntity;
+	return entity;
 }

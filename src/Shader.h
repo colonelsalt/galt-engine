@@ -16,12 +16,11 @@ struct Shader
 	int64_t FragmentLastWriteTime;
 
 	void CompileProgram(const char* vertexFileName,
-	                    const char* fragmentFileName,
-	                    GameMemory* gameMemory);
+	                    const char* fragmentFileName);
 
-	void CompileProgram(GameMemory* gameMemory);
+	void CompileProgram();
 
-	void ReloadIfNeeded(GameMemory* memory);
+	void ReloadIfNeeded();
 
 	inline void Bind();
 

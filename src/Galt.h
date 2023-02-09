@@ -9,6 +9,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Entity.h"
+#include "EntityMaster.h"
 
 struct FileResult
 {
@@ -52,6 +53,8 @@ struct GameMemory
 
 struct GameState
 {
+	EntityMaster EntityMasterInstance;
+
 	uint32_t TestVertexArrayId;
 
 	Camera FpsCamera;

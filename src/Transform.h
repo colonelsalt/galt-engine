@@ -2,18 +2,20 @@
 
 #include <glm/glm.hpp>
 
-struct Entity;
+#include "Component.h"
 
-struct TransformComponent
+struct TransformComponent : public Component
 {
 	glm::mat4 Model;
 
 	TransformComponent* p_Parent;
 	TransformComponent** a_Children;
+	
+	// Is storing this value even necessary? Will it ever be used outside
+	// of allocation?
 	uint32_t NumChildren;
 
-	// TODO: This seems a little hacky - consider doing full ECS later
-	Entity* p_Entity;
+	void CompInit(uint32_t numChildren = 0);
 
 	inline glm::mat4 WorldSpace()
 	{
@@ -45,11 +47,6 @@ struct TransformComponent
 		Model[0][0] = scale.x;
 		Model[1][1] = scale.y;
 		Model[2][2] = scale.z;
-	}
-
-	inline static TransformComponent Identity()
-	{
-		return { glm::mat4(1.0f) };
 	}
 
 	void SetRotation(float yaw, float pitch, float roll);

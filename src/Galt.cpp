@@ -1,6 +1,13 @@
 #include "Galt.h"
 
 #include "glad/glad.c"
+
+// ---
+// Globals ---
+// ---
+static GameMemory* g_Memory;
+static EntityMaster* g_EntityMaster;
+
 #include "Shader.cpp"
 #include "Primitives.cpp"
 #include "Camera.cpp"
@@ -8,6 +15,7 @@
 #include "Transform.cpp"
 #include "Mesh.cpp"
 #include "Entity.cpp"
+#include "Renderer.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -16,9 +24,12 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 {
 	Assert(sizeof(GameState) <= memory->PermStorageSize);
 	
+	GameState* state = (GameState*)memory->PermStorage;
 	if (!memory->OpenGlInitialised)
 	{
 		gladLoadGLLoader(memory->GladLoader);
+		g_Memory = memory;
+		g_EntityMaster = &state->EntityMasterInstance;
 		memory->OpenGlInitialised = true;
 	}
 	if (memory->PendingScreenResize)
@@ -27,26 +38,24 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		memory->PendingScreenResize = false;
 	}
 
-	GameState* state = (GameState*)memory->PermStorage;
 	if (!memory->IsInitialised)
 	{
 		glEnable(GL_DEPTH_TEST);
 
 		Shader* primitiveShader = &state->PrimitiveShader;
 		primitiveShader->CompileProgram("PrimitiveVert.glsl",
-		                                "PrimitiveFrag.glsl",
-		                                memory);
+		                                "PrimitiveFrag.glsl");
 		state->FpsCamera = CreateCamera();
-		CreatePlane(&state->Plane, primitiveShader, "wood.png", memory);
-		CreateCube(&state->Cube, primitiveShader, "container.png", memory);
-		state->Cube.Transform.Translation()->y = 0.5001f;
+		state->Plane = CreatePlane(primitiveShader, "wood.png");
+		state->Cube = CreateCube(primitiveShader, "container.png");
+		TransformComponent* cubeTransform = state->Cube.GetTransform();
+		cubeTransform->Translation()->y = 0.5001f;
 
-		LoadMesh("Lamp/Lamp.fbx", &state->Lamp, memory);
-		glm::vec3* lampPos = state->Lamp.Transform.Translation();
+		state->Lamp = LoadMesh("Lamp/Lamp.fbx");
+		glm::vec3* lampPos = state->Lamp.GetTransform()->Translation();
 		*lampPos = { 3.0f, -0.5f, 1.0f };
-		state->Lamp.Transform.SetRotation(0.0f, -90.0f, 0.0f);
-
-
+		TransformComponent* lampTransform = state->Lamp.GetTransform();
+		lampTransform->SetRotation(0.0f, -90.0f, 0.0f);
 
 		memory->IsInitialised = true;
 	}
@@ -54,7 +63,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	for (int i = 0; i < ArrayCount(state->Shaders); i++)
 	{
 		Shader* shader = &state->Shaders[i];
-		shader->ReloadIfNeeded(memory);
+		shader->ReloadIfNeeded();
 	}
 
 	state->FpsCamera.Update(input);
@@ -64,16 +73,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	state->PrimitiveShader.Bind();
-
+	
 	state->PrimitiveShader.SetMat4("u_Projection", state->FpsCamera.Projection);
 	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
 
-
-	state->Plane.Draw(&state->PrimitiveShader);
-
-	state->Cube.Draw(&state->PrimitiveShader);
-
-	state->Lamp.Draw(&state->PrimitiveShader);
+	RenderScene(&state->PrimitiveShader);
 
 	glBindVertexArray(0);
 

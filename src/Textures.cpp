@@ -5,7 +5,7 @@
 
 constexpr char* DEFAULT_DIRECTORY = "assets/textures/";
 
-uint32_t LoadTexture(char* fileName, GameMemory* memory)
+static uint32_t LoadTexture(char* fileName)
 {
 	TextureParams params = {};
 	params.FileName = fileName;
@@ -13,10 +13,10 @@ uint32_t LoadTexture(char* fileName, GameMemory* memory)
 	params.UseGammaCorrection = false;
 	params.WrappingOption = GL_REPEAT;
 
-	return LoadTexture(&params, memory);
+	return LoadTexture(&params);
 }
 
-uint32_t LoadTexture(TextureParams* texParams, GameMemory* memory)
+static uint32_t LoadTexture(TextureParams* texParams)
 {
 	Assert(texParams->FileName);
 

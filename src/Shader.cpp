@@ -4,15 +4,15 @@
 
 static constexpr char* SHADERS_DIR = "src/shaders/";
 
-void Shader::ReloadIfNeeded(GameMemory* memory)
+void Shader::ReloadIfNeeded()
 {
-	int64_t vertLastWriteTime = memory->GetLastWriteTime(VertexSourcePath);
-	int64_t fragLastWriteTime = memory->GetLastWriteTime(FragmentSourcePath);
+	int64_t vertLastWriteTime = g_Memory->GetLastWriteTime(VertexSourcePath);
+	int64_t fragLastWriteTime = g_Memory->GetLastWriteTime(FragmentSourcePath);
 
 	if (vertLastWriteTime > VertexLastWriteTime
 		|| fragLastWriteTime > FragmentLastWriteTime)
 	{
-		CompileProgram(memory);
+		CompileProgram();
 	}
 }
 
@@ -44,26 +44,25 @@ static uint32_t CompileShader(const char* source, GLenum type)
 
 // First-time compilation
 void Shader::CompileProgram(const char* vertexFileName,
-                            const char* fragmentFileName,
-                            GameMemory* gameMemory)
+                            const char* fragmentFileName)
 {
 	Assert(RendererId == 0);
 
 	CatStr(SHADERS_DIR, vertexFileName, VertexSourcePath);
 	CatStr(SHADERS_DIR, fragmentFileName, FragmentSourcePath);
 
-	CompileProgram(gameMemory);
+	CompileProgram();
 }
 
 
-void Shader::CompileProgram(GameMemory* gameMemory)
+void Shader::CompileProgram()
 {
 	Assert(*VertexSourcePath && *FragmentSourcePath);
 
-	FileResult vertexSourceFile = gameMemory->ReadFile(VertexSourcePath);
-	FileResult fragmentSourceFile = gameMemory->ReadFile(FragmentSourcePath);
-	VertexLastWriteTime = gameMemory->GetLastWriteTime(VertexSourcePath);
-	FragmentLastWriteTime = gameMemory->GetLastWriteTime(FragmentSourcePath);
+	FileResult vertexSourceFile = g_Memory->ReadFile(VertexSourcePath);
+	FileResult fragmentSourceFile = g_Memory->ReadFile(FragmentSourcePath);
+	VertexLastWriteTime = g_Memory->GetLastWriteTime(VertexSourcePath);
+	FragmentLastWriteTime = g_Memory->GetLastWriteTime(FragmentSourcePath);
 
 	uint32_t vertId = CompileShader((const char*)vertexSourceFile.Contents,
 	                                GL_VERTEX_SHADER);
@@ -91,8 +90,8 @@ void Shader::CompileProgram(GameMemory* gameMemory)
 	glDeleteShader(vertId);
 	glDeleteShader(fragId);
 
-	gameMemory->FreeFile(vertexSourceFile.Contents);
-	gameMemory->FreeFile(fragmentSourceFile.Contents);
+	g_Memory->FreeFile(vertexSourceFile.Contents);
+	g_Memory->FreeFile(fragmentSourceFile.Contents);
 
 	if (RendererId)
 	{
