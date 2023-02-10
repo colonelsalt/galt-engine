@@ -4,16 +4,18 @@
 
 #include "Component.h"
 
-struct TransformComponent : public Component
+struct Transform : public Component
 {
 	glm::mat4 Model;
 
-	TransformComponent* p_Parent;
-	TransformComponent** a_Children;
+	Transform* p_Parent;
+	Transform** a_Children;
 	
 	// Is storing this value even necessary? Will it ever be used outside
 	// of allocation?
 	uint32_t NumChildren;
+
+	COMPONENT_DEF(ComponentType::TRANSFORM, MAX_TRANSFORMS);
 
 	void CompInit(uint32_t numChildren = 0);
 

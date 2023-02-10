@@ -1,31 +1,13 @@
 #include "Entity.h"
 
-inline TransformComponent* Entity::AddTransform()
+template <typename T>
+T* Entity::AddComponent()
 {
-	return g_EntityMaster->AddTransform(*this);
+	return g_EntityMaster->AddComponent<T>(*this);
 }
 
-inline MeshComponent* Entity::AddMesh()
+template <typename T>
+T* Entity::GetComponent()
 {
-	return g_EntityMaster->AddMesh(*this);
-}
-
-inline PrimitiveComponent* Entity::AddPrimitive()
-{
-	return g_EntityMaster->AddPrimitive(*this);
-}
-
-inline TransformComponent* Entity::GetTransform()
-{
-	return g_EntityMaster->GetTransform(*this);
-}
-
-inline MeshComponent* Entity::GetMesh()
-{
-	return g_EntityMaster->GetMesh(*this);
-}
-
-inline PrimitiveComponent* Entity::GetPrimitive()
-{
-	return g_EntityMaster->GetPrimitive(*this);
+	return g_EntityMaster->GetComponent<T>(*this);
 }

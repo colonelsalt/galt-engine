@@ -1,5 +1,8 @@
 #pragma once
 
+// Technically this is MAX_ENTITIES-1, since 0 is not a valid entityId
+constexpr uint32_t MAX_ENTITIES = 50;
+
 struct Entity
 {
 	uint32_t Id;
@@ -9,16 +12,10 @@ struct Entity
 		return Id;
 	}
 
-	TransformComponent* AddTransform();
+	template <typename T>
+	T* AddComponent();
 
-	MeshComponent* AddMesh();
-
-	PrimitiveComponent* AddPrimitive();
-
-	TransformComponent* GetTransform();
-
-	MeshComponent* GetMesh();
-
-	PrimitiveComponent* GetPrimitive();
+	template <typename T>
+	T* GetComponent();
 
 };

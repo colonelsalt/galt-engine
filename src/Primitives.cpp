@@ -4,10 +4,10 @@
 
 #include "Textures.h"
 
-void PrimitiveComponent::Draw()
+void Primitive::Draw()
 {
 	Entity thisEntity = { EntityId };
-	TransformComponent* transform = thisEntity.GetTransform();
+	Transform* transform = thisEntity.GetComponent<Transform>();
 	Assert(transform);
 
 	glBindVertexArray(VertexArrayId);
@@ -50,10 +50,10 @@ static Entity CreatePlane(Shader* shader,
 {
 	Entity entity = g_EntityMaster->CreateEntity();
 
-	TransformComponent* transform = entity.AddTransform();
+	Transform* transform = entity.AddComponent<Transform>();
 	transform->CompInit();
 
-	PrimitiveComponent* primitive = entity.AddPrimitive();
+	Primitive* primitive = entity.AddComponent<Primitive>();
 
 	primitive->_Shader = shader;
 	primitive->TextureId = LoadTexture(textureName);
@@ -80,11 +80,11 @@ static Entity CreateCube(Shader* shader,
 {
 	Entity entity = g_EntityMaster->CreateEntity();
 
-	TransformComponent* transform = entity.AddTransform();
+	Transform* transform = entity.AddComponent<Transform>();
 	Assert(transform);
 	transform->CompInit();
 
-	PrimitiveComponent* primitive = entity.AddPrimitive();
+	Primitive* primitive = entity.AddComponent<Primitive>();
 	Assert(primitive);
 
 	primitive->_Shader = shader;

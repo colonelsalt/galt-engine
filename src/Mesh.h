@@ -22,7 +22,7 @@ struct MeshTexture
 	TextureType Type;
 };
 
-struct MeshComponent : public Component
+struct Mesh : public Component
 {
 	uint32_t VertexArrayId;
 
@@ -35,6 +35,8 @@ struct MeshComponent : public Component
 
 	uint32_t NumTextures;
 	MeshTexture* a_Textures;
+
+	COMPONENT_DEF(ComponentType::MESH, MAX_MESHES);
 
 	void Draw(Shader* shader);
 };

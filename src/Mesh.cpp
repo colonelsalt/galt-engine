@@ -21,7 +21,7 @@ static glm::mat4 AssimpToGlmMatrix(const aiMatrix4x4& assimpMatrix)
 
 static void LoadTextureFromMaterial(aiMaterial* material,
                                     const aiScene* scene,
-                                    MeshComponent* outMesh,
+                                    Mesh* outMesh,
                                     char* directoryPath)
 {
 	aiTextureType texType = aiTextureType_DIFFUSE;
@@ -48,7 +48,7 @@ static void ParseMesh(aiMesh* assimpMesh,
                       Entity entity,
                       char* directoryPath)
 {
-	MeshComponent* outMesh = entity.AddMesh();
+	Mesh* outMesh = entity.AddComponent<Mesh>();
 	Assert(outMesh);
 
 	outMesh->NumVertices = assimpMesh->mNumVertices;
@@ -140,7 +140,7 @@ static void ParseNode(aiNode* node,
                       Entity entity,
                       char* directoryPath)
 {
-	TransformComponent* transform = entity.AddTransform();
+	Transform* transform = entity.AddComponent<Transform>();
 	Assert(transform);
 	transform->CompInit(node->mNumChildren);
 
@@ -158,7 +158,7 @@ static void ParseNode(aiNode* node,
 		Entity childEntity = g_EntityMaster->CreateEntity();
 
 		ParseNode(node->mChildren[i], scene, childEntity, directoryPath);
-		transform->a_Children[i] = childEntity.GetTransform();
+		transform->a_Children[i] = childEntity.GetComponent<Transform>();
 		transform->a_Children[i]->p_Parent = transform;
 	}
 }
@@ -188,14 +188,14 @@ static Entity LoadMesh(const char* modelName)
 	return rootEntity;
 }
 
-void MeshComponent::Draw(Shader* shader)
+void Mesh::Draw(Shader* shader)
 {
 	glBindVertexArray(VertexArrayId);
 	shader->Bind();
 
 	Entity entity = { EntityId };
 	Assert(entity);
-	TransformComponent* transform = entity.GetTransform();
+	Transform* transform = entity.GetComponent<Transform>();
 	Assert(transform);
 
 	shader->SetMat4("u_Model", transform->WorldSpace());

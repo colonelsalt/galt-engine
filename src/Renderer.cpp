@@ -2,13 +2,17 @@
 
 void RenderScene(Shader* shader)
 {
-	for (uint32_t i = 0; i < g_EntityMaster->NumMeshes; i++)
+	uint32_t numMeshes = g_EntityMaster->NumComponents(ComponentType::MESH);
+	Mesh* meshes = g_EntityMaster->GetAllComponents<Mesh>();
+	for (uint32_t i = 0; i < numMeshes; i++)
 	{
-		g_EntityMaster->MeshTable[i].Draw(shader);
+		meshes[i].Draw(shader);
 	}
 
-	for (uint32_t i = 0; i < g_EntityMaster->NumPrimitives; i++)
+	uint32_t numPrimitives = g_EntityMaster->NumComponents(ComponentType::PRIMITIVE);
+	Primitive* primitives = g_EntityMaster->GetAllComponents<Primitive>();
+	for (uint32_t i = 0; i < numPrimitives; i++)
 	{
-		g_EntityMaster->PrimitivesTable[i].Draw();
+		primitives[i].Draw();
 	}
 }
