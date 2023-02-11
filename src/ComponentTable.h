@@ -24,7 +24,7 @@ struct ComponentTable : public GenericComponentTable
 
 		IndexTable[entity] = NumComponents;
 		T* component = &Components[NumComponents++];
-		component->EntityId = entity;
+		component->ThisEntity = entity;
 		return component;
 	}
 

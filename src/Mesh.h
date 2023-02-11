@@ -36,7 +36,11 @@ struct Mesh : public Component
 	uint32_t NumTextures;
 	MeshTexture* a_Textures;
 
+	Shader* p_Shader;
+
 	COMPONENT_DEF(ComponentType::MESH, MAX_MESHES);
 
-	void Draw(Shader* shader);
+	void Draw();
+
+	void SetShader(Shader* shader);
 };

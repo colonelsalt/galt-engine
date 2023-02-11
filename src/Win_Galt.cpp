@@ -188,6 +188,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_SAMPLES, 4);
 	
 	OutputDebugStringA("sup, homie\n");
 	
@@ -268,9 +269,15 @@ int CALLBACK WinMain(HINSTANCE instance,
 		newInput->DeltaTime = timeNow - s_LastFrameTime;
 		s_LastFrameTime = timeNow;
 
+		char latencyStr[128];
+		float ms = newInput->DeltaTime * 1'000;
+		int fps = RoundToInt(1.0f / newInput->DeltaTime);
+		sprintf(latencyStr, "%.2fms; %dFPS\n", ms, fps);
+		OutputDebugStringA(latencyStr);
+
 		// Check if game code DLL needs reloading
 		FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
-		if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime))
+		if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime) == 1)
 		{
 			WinUnloadGameCode(&game);
 			game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);

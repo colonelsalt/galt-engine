@@ -42,27 +42,46 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	if (!memory->IsInitialised)
 	{
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+
 		state->EntityMasterInstance.InitComponents();
 
 		Shader* primitiveShader = &state->PrimitiveShader;
 		primitiveShader->CompileProgram("PrimitiveVert.glsl",
 		                                "PrimitiveFrag.glsl");
-		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane(primitiveShader, "wood.png");
-		state->Cube = CreateCube(primitiveShader, "container.png");
-		NameTag* cubeName = state->Cube.AddComponent<NameTag>();
-		cubeName->Init("Box");
+		Shader* basicPhongShader = &state->BasicPhongShader;
+		basicPhongShader->CompileProgram("BasicPhongVert.glsl",
+		                                "BasicPhongFrag.glsl");
+		Shader* flatColourShader = &state->FlatColourShader;
+		flatColourShader->CompileProgram("BasicVert.glsl",
+		                                 "FlatColourFrag.glsl");
 
-		Transform* cubeTransform = state->Cube.GetComponent<Transform>();
-		cubeTransform->Translation()->y = 0.5001f;
+		state->FpsCamera = CreateCamera();
+		state->Plane = CreatePlane("wood.png");
+		state->Plane.GetComponent<Primitive>()->p_Shader = basicPhongShader;
+
+		state->Cube = CreateCube("container.png", "container_specular.png");
+		state->Cube.GetComponent<Primitive>()->p_Shader = basicPhongShader;
+
+		state->Cube.Trans()->Position()->y = 0.5001f;
 
 		state->Lamp = LoadMesh("Lamp/Lamp.fbx");
-		glm::vec3* lampPos = state->Lamp.GetComponent<Transform>()->Translation();
+		SetShaderInHierarchy(state->Lamp.Trans(), basicPhongShader);
+
+		glm::vec3* lampPos = state->Lamp.Trans()->Position();
 		*lampPos = { 3.0f, -0.5f, 1.0f };
-		Transform* lampTransform = state->Lamp.GetComponent<Transform>();
+		Transform* lampTransform = state->Lamp.Trans();
 		lampTransform->SetRotation(0.0f, -90.0f, 0.0f);
 
+		state->PointLight = g_EntityMaster->CreateEntity("DirLight");
+		Light* lightLight = state->PointLight.AddComponent<Light>();
+		Primitive* lightCube = state->PointLight.AddComponent<Primitive>();
+		PopulateCube(lightCube, "white.png");
+		lightCube->p_Shader = flatColourShader;
 
+		lightLight->Type = LightType::POINT;
+
+		RenderSetup(state);
 		memory->IsInitialised = true;
 	}
 
@@ -73,23 +92,18 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	}
 
 	state->FpsCamera.Update(input);
+	glm::vec3* lampPos = state->Lamp.Trans()->Position();
 
-	// Rendering ---
-	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	state->PrimitiveShader.Bind();
+	Transform* lightTransform = state->PointLight.Trans();
+	glm::vec3* lightPos = lightTransform->Position();
 	
-	glm::vec3* lampPos = state->Lamp.GetComponent<Transform>()->Translation();
-	//lampPos->y += 0.001f;
+	lightTransform->SetScale( { 0.25f, 0.25f, 0.25f });
 
-	state->PrimitiveShader.SetMat4("u_Projection", state->FpsCamera.Projection);
-	state->PrimitiveShader.SetMat4("u_View", state->FpsCamera.View);
+	*lightPos = { 1.0f, 3.0f, 0.0f };
 
-	NameTag* cubeTag = state->Cube.GetComponent<NameTag>();
 
-	RenderScene(&state->PrimitiveShader);
+	Light* lightLight = state->PointLight.GetComponent<Light>();
+	lightLight->Colour = { 1.0f, 1.0f, 1.0f };
 
-	glBindVertexArray(0);
-
+	RenderScene(state);
 }

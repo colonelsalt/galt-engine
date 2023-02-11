@@ -7,10 +7,12 @@
 struct Primitive : public Component
 {
 	uint32_t VertexArrayId;
-	Shader* _Shader;
 	int NumVertices;
 
-	uint32_t TextureId;
+	uint32_t DiffuseTextureId;
+	uint32_t SpecularTextureId;
+
+	Shader* p_Shader;
 
 	COMPONENT_DEF(ComponentType::PRIMITIVE, MAX_PRIMITIVES);
 

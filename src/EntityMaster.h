@@ -13,17 +13,20 @@ struct EntityMaster
 
 	void InitComponents();
 
-	inline Entity CreateEntity()
+	Entity CreateEntity(char* name);
+
+	template <typename T>
+	inline bool HasComponent(Entity entity)
 	{
-		NumEntities++;
-		Assert(NumEntities < MAX_ENTITIES);
-		return { NumEntities };
+		return ComponentBitSet[entity] & (1 << T::GetType());
 	}
 
 	template <typename T>
 	inline T* AddComponent(Entity entity)
 	{
 		Assert(entity && entity < MAX_ENTITIES);
+		Assert(!HasComponent<T>(entity));
+
 		ComponentBitSet[entity] |= (1 << T::GetType());
 		ComponentTable<T>* table = (ComponentTable<T>*)
 			ComponentTables[T::GetType()];
@@ -35,7 +38,7 @@ struct EntityMaster
 	inline T* GetComponent(Entity entity)
 	{
 		Assert(entity && entity < MAX_ENTITIES);
-		if (ComponentBitSet[entity] & (1 << T::GetType()))
+		if (HasComponent<T>(entity))
 		{
 			ComponentTable<T>* table = (ComponentTable<T>*)
 				ComponentTables[T::GetType()];

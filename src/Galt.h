@@ -55,27 +55,46 @@ struct GameState
 {
 	EntityMaster EntityMasterInstance;
 
-	uint32_t TestVertexArrayId;
+	uint32_t ProjViewUniformBuffer;
 
 	Camera FpsCamera;
 	Entity Plane;
 	Entity Cube;
 	Entity Lamp;
 
+	Entity PointLight;
+
 	union
 	{
-		Shader Shaders[1];
+		Shader Shaders[3];
 		struct
 		{
 			Shader PrimitiveShader;
+			Shader BasicPhongShader;
+			Shader FlatColourShader;
 		};
 	};
 };
+
+inline int RoundToInt(float f)
+{
+	float x = f * 10.0f;
+	return (int)x / 10;
+}
 
 inline uint32_t SafeTruncateUInt64(uint64_t value)
 {
 	Assert(value <= 0xFFFFFFFF);
 	return (uint32_t)value;
+}
+
+inline void Substring(const char* s, int start, int end, char* dest)
+{
+	for (int i = start; i < end; i++)
+	{
+		*dest++ = s[i];
+	}
+	*dest = 0;
 }
 
 inline size_t StrLen(const char* s)

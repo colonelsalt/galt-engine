@@ -6,12 +6,13 @@ constexpr uint32_t MAX_TRANSFORMS = MAX_ENTITIES;
 constexpr uint32_t MAX_MESHES = 30;
 constexpr uint32_t MAX_PRIMITIVES = 5;
 constexpr uint32_t MAX_NAME_TAGS = MAX_ENTITIES;
+constexpr uint32_t MAX_LIGHTS = 1;
 
 enum ComponentType
 {
 	INVALID = -1,
-	TRANSFORM = 0, MESH = 1, PRIMITIVE = 2, NAME_TAG = 3,
-	NUM_COMPONENTS = 4
+	TRANSFORM = 0, MESH = 1, PRIMITIVE = 2, NAME_TAG = 3, LIGHT = 4,
+	NUM_COMPONENTS = 5
 };
 
 inline bool ValidComponentType(ComponentType type)
@@ -19,9 +20,17 @@ inline bool ValidComponentType(ComponentType type)
 	return type != ComponentType::INVALID && type != ComponentType::NUM_COMPONENTS;
 }
 
+struct Transform;
+
 struct Component
 {
-	uint32_t EntityId;
+	Entity ThisEntity;
+
+	Transform* Trans();
+
+	template <typename T>
+	T* GetComponent();
+
 };
 
 #define COMPONENT_DEF(type, maxComponents)\

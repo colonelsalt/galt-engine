@@ -3,6 +3,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "NameTag.h"
+
 constexpr char* MODELS_DIRECTORY = "assets/models/";
 
 static glm::mat4 AssimpToGlmMatrix(const aiMatrix4x4& assimpMatrix)
@@ -53,7 +55,7 @@ static void ParseMesh(aiMesh* assimpMesh,
 
 	outMesh->NumVertices = assimpMesh->mNumVertices;
 	outMesh->NumIndices = 3 * assimpMesh->mNumFaces;
-	
+
 	// TODO: Is this necessary if we're just sending them to the GPU?
 	outMesh->a_Vertices = (Vertex*)
 		g_Memory->TempAlloc(outMesh->NumVertices * sizeof(Vertex));
@@ -140,9 +142,9 @@ static void ParseNode(aiNode* node,
                       Entity entity,
                       char* directoryPath)
 {
-	Transform* transform = entity.AddComponent<Transform>();
+	Transform* transform = entity.Trans();
 	Assert(transform);
-	transform->CompInit(node->mNumChildren);
+	transform->AllocChildren(node->mNumChildren);
 
 	for (uint32_t i = 0; i < node->mNumMeshes; i++)
 	{
@@ -155,10 +157,11 @@ static void ParseNode(aiNode* node,
 
 	for (uint32_t i = 0; i < node->mNumChildren; i++)
 	{
-		Entity childEntity = g_EntityMaster->CreateEntity();
+		char* childName = node->mName.data;
+		Entity childEntity = g_EntityMaster->CreateEntity(childName);
 
 		ParseNode(node->mChildren[i], scene, childEntity, directoryPath);
-		transform->a_Children[i] = childEntity.GetComponent<Transform>();
+		transform->a_Children[i] = childEntity.Trans();
 		transform->a_Children[i]->p_Parent = transform;
 	}
 }
@@ -179,29 +182,62 @@ static Entity LoadMesh(const char* modelName)
 	// TODO: Handle constructing hierarchy of submeshes
 	Assert(scene->mNumMeshes == 1);
 
-	// Get directory name
+	// Extract directory name & file name without extension
 	int lastSlashIndex = LastIndexOf(filePath, '/');
-	filePath[lastSlashIndex + 1] = 0;
+	char* directoryPath = filePath;
 
-	Entity rootEntity = g_EntityMaster->CreateEntity();
+	char rootMeshName[MAX_NAME_LENGTH];
+	int lastDotIndex = LastIndexOf(filePath, '.');
+	Substring(filePath, lastSlashIndex + 1, lastDotIndex, rootMeshName);
+
+	directoryPath[lastSlashIndex + 1] = 0;
+
+	Entity rootEntity = g_EntityMaster->CreateEntity(rootMeshName);
 	ParseNode(scene->mRootNode, scene, rootEntity, filePath);
 	return rootEntity;
 }
 
-void Mesh::Draw(Shader* shader)
+void Mesh::Draw()
 {
 	glBindVertexArray(VertexArrayId);
-	shader->Bind();
+	
+	if (!p_Shader)
+	{
+		// TODO: Use default flat-colour shader if none assigned
+		Assert(false);
+	}
+	
+	p_Shader->Bind();
 
-	Entity entity = { EntityId };
-	Assert(entity);
-	Transform* transform = entity.GetComponent<Transform>();
+	Assert(ThisEntity);
+	Transform* transform = ThisEntity.Trans();
 	Assert(transform);
 
-	shader->SetMat4("u_Model", transform->WorldSpace());
-
+	p_Shader->SetMat4("u_Model", transform->WorldSpace());
+	
 	Assert(NumTextures == 1);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, a_Textures[0].TextureId);
 
 	glDrawElements(GL_TRIANGLES, NumIndices, GL_UNSIGNED_INT, nullptr);
+}
+
+static void SetShaderInHierarchy(Transform* transform, Shader* shader)
+{
+	Assert(transform && shader);
+	Mesh* mesh = transform->ThisEntity.GetComponent<Mesh>();
+	if (mesh)
+	{
+		mesh->p_Shader = shader;
+	}
+	for (uint32_t i = 0; i < transform->NumChildren; i++)
+	{
+		SetShaderInHierarchy(transform->a_Children[i], shader);
+	}
+}
+
+void Mesh::SetShader(Shader* shader)
+{
+	Assert(shader);
+	SetShaderInHierarchy(ThisEntity.Trans(), shader);
 }

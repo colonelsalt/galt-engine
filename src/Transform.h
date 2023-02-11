@@ -17,7 +17,9 @@ struct Transform : public Component
 
 	COMPONENT_DEF(ComponentType::TRANSFORM, MAX_TRANSFORMS);
 
-	void CompInit(uint32_t numChildren = 0);
+	void CompInit();
+
+	void AllocChildren(uint32_t numChildren);
 
 	inline glm::mat4 WorldSpace()
 	{
@@ -28,7 +30,7 @@ struct Transform : public Component
 		return p_Parent->WorldSpace() * Model;
 	}
 
-	inline glm::vec3* Translation()
+	inline glm::vec3* Position()
 	{
 		return (glm::vec3*)&Model[3];
 	}
