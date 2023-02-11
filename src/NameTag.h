@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr uint32_t MAX_NAME_LENGTH = 20;
+constexpr uint32_t MAX_NAME_LENGTH = 60;
 
 struct NameTag : Component
 {

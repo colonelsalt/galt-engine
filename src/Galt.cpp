@@ -57,6 +57,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		Shader* flatColourShader = &state->FlatColourShader;
 		flatColourShader->CompileProgram("BasicVert.glsl",
 		                                 "FlatColourFrag.glsl");
+		Shader* meshShader = &state->MeshShader;
+		meshShader->CompileProgram("MeshVert.glsl", "MeshFrag.glsl");
 
 		state->FpsCamera = CreateCamera();
 		state->Plane = CreatePlane("wood.png");
@@ -67,13 +69,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 		state->Cube.Trans()->Position()->y = 0.5001f;
 
-		state->Lamp = LoadMesh("Lamp/Lamp.fbx");
-		SetShaderInHierarchy(state->Lamp.Trans(), basicPhongShader);
-
-		glm::vec3* lampPos = state->Lamp.Trans()->Position();
-		*lampPos = { 3.0f, -0.5f, 1.0f };
-		Transform* lampTransform = state->Lamp.Trans();
-		lampTransform->SetRotation(0.0f, -90.0f, 0.0f);
+		state->Player = LoadMesh("Boss/The Boss.fbx");
+		SetShaderInHierarchy(state->Player.Trans(), meshShader);
 
 		state->PointLight = g_EntityMaster->CreateEntity("DirLight");
 		Light* lightLight = state->PointLight.AddComponent<Light>();
@@ -97,7 +94,6 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	}
 
 	state->FpsCamera.Update(input);
-	glm::vec3* lampPos = state->Lamp.Trans()->Position();
 
 	Transform* lightTransform = state->PointLight.Trans();
 	glm::vec3* lightPos = lightTransform->Position();
@@ -106,6 +102,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	*lightPos = { 1.0f, 3.0f, 0.0f };
 
+	Transform* playerTransform = state->Player.Trans();
+	glm::vec3* playerPos = playerTransform->Position();
+
+	*playerPos = { -2.0f, 0.0f, -1.0f };
+	playerTransform->SetScale( { 0.02f, 0.02f, 0.02f });
 
 	Light* lightLight = state->PointLight.GetComponent<Light>();
 	lightLight->Colour = { 1.0f, 1.0f, 1.0f };

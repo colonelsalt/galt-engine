@@ -1,7 +1,7 @@
 #pragma once
 
 // Technically this is MAX_ENTITIES-1, since 0 is not a valid entityId
-constexpr uint32_t MAX_ENTITIES = 50;
+constexpr uint32_t MAX_ENTITIES = 300;
 
 struct Transform;
 

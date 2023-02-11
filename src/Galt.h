@@ -61,17 +61,19 @@ struct GameState
 	Camera FpsCamera;
 	Entity Plane;
 	Entity Cube;
-	Entity Lamp;
+
+	Entity Player;
 
 	Entity PointLight;
 
 	union
 	{
-		Shader Shaders[3];
+		Shader Shaders[4];
 		struct
 		{
 			Shader PrimitiveShader;
 			Shader BasicPhongShader;
+			Shader MeshShader;
 			Shader FlatColourShader;
 		};
 	};

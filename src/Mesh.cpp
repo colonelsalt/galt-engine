@@ -26,22 +26,41 @@ static void LoadTextureFromMaterial(aiMaterial* material,
                                     Mesh* outMesh,
                                     char* directoryPath)
 {
-	aiTextureType texType = aiTextureType_DIFFUSE;
-	for (uint32_t i = 0; i < material->GetTextureCount(texType); i++)
+	constexpr aiTextureType TEXTURE_TYPES[] =
 	{
-		aiString path;
-		material->GetTexture(texType, i, &path);
+		aiTextureType_DIFFUSE, aiTextureType_SPECULAR, aiTextureType_NORMALS
+	};
+
+	for (uint32_t i = 0; i < ArrayCount(TEXTURE_TYPES); i++)
+	{
+		aiTextureType texType = TEXTURE_TYPES[i];
+		for (uint32_t j = 0; j < material->GetTextureCount(texType); j++)
+		{
+			aiString path;
+			material->GetTexture(texType, j, &path);
 		
-		MeshTexture* texture = &outMesh->a_Textures[outMesh->NumTextures++];
+			MeshTexture* texture = &outMesh->a_Textures[outMesh->NumTextures++];
+			texture->Type = (TextureType)texType;
 
-		TextureParams texParams = {};
-		texParams.FileName = path.data;
-		texParams.DirectoryPath = directoryPath;
-		texParams.FlipVertically = true;
-		texParams.WrappingOption = TextureParams::DefaultWrapping();
+			TextureParams texParams = {};
+			texParams.FlipVertically = true;
+			texParams.WrappingOption = TextureParams::DefaultWrapping();
 
-		texture->TextureId = LoadTexture(&texParams);
-		texture->Type = TextureType::DIFFUSE;
+			if (scene->mNumTextures > 0)
+			{
+				// Textures are embedded in model file
+				const aiTexture* aiTexture = scene->GetEmbeddedTexture(path.data);
+				texture->TextureId = LoadTextureEmbedded(aiTexture, &texParams);
+			}
+			else
+			{
+				// Textures are in an external file
+				texParams.FileName = path.data;
+				texParams.DirectoryPath = directoryPath;
+
+				texture->TextureId = LoadTexture(&texParams);
+			}
+		}
 	}
 }
 
@@ -69,9 +88,13 @@ static void ParseMesh(aiMesh* assimpMesh,
 		
 		aiVector3D* aiPos = &assimpMesh->mVertices[i];
 		aiVector3D* aiNormal = &assimpMesh->mNormals[i];
+		aiVector3D* aiTangent = &assimpMesh->mTangents[i];
+		aiVector3D* aiBitangent = &assimpMesh->mBitangents[i];
 
 		ourVertex->Position = { aiPos->x, aiPos->y, aiPos->z };
 		ourVertex->Normal = { aiNormal->x, aiNormal->y, aiNormal->z };
+		ourVertex->Tangent = { aiTangent->x, aiTangent->y, aiTangent->z };
+		ourVertex->Bitangent = { aiBitangent->x, aiBitangent->y, aiBitangent->z };
 
 		// TODO: Work out whether we need to process the other texcoords in this array
 		if (assimpMesh->mTextureCoords[0])
@@ -101,7 +124,9 @@ static void ParseMesh(aiMesh* assimpMesh,
 		outMesh->NumTextures = 0;
 		aiMaterial* material = scene->mMaterials[assimpMesh->mMaterialIndex];
 
-		uint32_t totalTextures = material->GetTextureCount(aiTextureType_DIFFUSE);
+		uint32_t totalTextures = material->GetTextureCount(aiTextureType_DIFFUSE)
+			+ material->GetTextureCount(aiTextureType_SPECULAR)
+			+ material->GetTextureCount(aiTextureType_NORMALS);
 		outMesh->a_Textures = (MeshTexture*)
 			g_Memory->TempAlloc(totalTextures * sizeof(MeshTexture));
 		LoadTextureFromMaterial(material, scene, outMesh, directoryPath);
@@ -135,6 +160,12 @@ static void ParseMesh(aiMesh* assimpMesh,
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 }
 
 static void ParseNode(aiNode* node,
@@ -144,6 +175,7 @@ static void ParseNode(aiNode* node,
 {
 	Transform* transform = entity.Trans();
 	Assert(transform);
+	transform->Model = AssimpToGlmMatrix(node->mTransformation);
 	transform->AllocChildren(node->mNumChildren);
 
 	for (uint32_t i = 0; i < node->mNumMeshes; i++)
@@ -180,7 +212,7 @@ static Entity LoadMesh(const char* modelName)
 	}
 
 	// TODO: Handle constructing hierarchy of submeshes
-	Assert(scene->mNumMeshes == 1);
+	//Assert(scene->mNumMeshes == 1);
 
 	// Extract directory name & file name without extension
 	int lastSlashIndex = LastIndexOf(filePath, '/');
@@ -215,11 +247,29 @@ void Mesh::Draw()
 
 	p_Shader->SetMat4("u_Model", transform->WorldSpace());
 	
-	Assert(NumTextures == 1);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, a_Textures[0].TextureId);
+	for (uint32_t i = 0; i < NumTextures; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		MeshTexture* texture = &a_Textures[i];
+		glBindTexture(GL_TEXTURE_2D, texture->TextureId);
+		
+		if (texture->Type == TextureType::DIFFUSE)
+		{
+			p_Shader->SetInt("u_DiffuseTexture", i);
+		}
+		else if (texture->Type == TextureType::SPECULAR)
+		{
+			p_Shader->SetInt("u_SpecTexture", i);
+		}
+		else if (texture->Type == TextureType::NORMAL)
+		{
+			p_Shader->SetInt("u_NormalTexture", i);
+		}
+	}
 
 	glDrawElements(GL_TRIANGLES, NumIndices, GL_UNSIGNED_INT, nullptr);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 static void SetShaderInHierarchy(Transform* transform, Shader* shader)

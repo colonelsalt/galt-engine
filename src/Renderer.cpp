@@ -51,6 +51,12 @@ void RenderScene(GameState* state)
 	state->BasicPhongShader.SetVec3("u_PointLight.Position", *lightTransform->Position());
 	state->BasicPhongShader.SetVec3("u_PointLight.Colour", light->Colour);
 
+	state->MeshShader.Bind();
+	state->MeshShader.SetVec3("u_CameraPos", state->FpsCamera.Position);
+
+	state->MeshShader.SetVec3("u_PointLight.Position", *lightTransform->Position());
+	state->MeshShader.SetVec3("u_PointLight.Colour", light->Colour);
+
 	uint32_t numMeshes = g_EntityMaster->NumComponents(ComponentType::MESH);
 	Mesh* meshes = g_EntityMaster->GetAllComponents<Mesh>();
 	for (uint32_t i = 0; i < numMeshes; i++)

@@ -11,7 +11,7 @@ static Camera CreateCamera()
 
 	result.MouseSensitivity = 0.001f;
 	result.StickSensitivity = 0.017f;
-	result.MoveSpeed = 2.5f;
+	result.MoveSpeed = 3.5f;
 
 	result.Fov = glm::pi<float>() / 4.0f;
 	result.Aspect = 16.0f / 9.0f;
@@ -30,7 +30,7 @@ void Camera::Update(ControllerInput* input)
 	if (input->IsAnalogue)
 	{
 		xOffset = input->CameraAxisX * StickSensitivity;
-		yOffset = -input->CameraAxisY * StickSensitivity;
+		yOffset = input->CameraAxisY * StickSensitivity;
 	}
 	else
 	{
@@ -49,21 +49,29 @@ void Camera::Update(ControllerInput* input)
 
 	Right = glm::normalize(glm::cross(Forward, Up));
 
-	if (input->Up)
+	if (input->IsAnalogue)
 	{
-		Position += speed * Forward;
+		glm::vec3 movementDir = input->MovementAxisX * Right + input->MovementAxisY * Forward;
+		Position += movementDir * speed;
 	}
-	if (input->Down)
+	else
 	{
-		Position -= speed * Forward;
-	}
-	if (input->Left)
-	{
-		Position -= speed * Right;
-	}
-	if (input->Right)
-	{
-		Position += speed * Right;
+		if (input->Up)
+		{
+			Position += speed * Forward;
+		}
+		if (input->Down)
+		{
+			Position -= speed * Forward;
+		}
+		if (input->Left)
+		{
+			Position -= speed * Right;
+		}
+		if (input->Right)
+		{
+			Position += speed * Right;
+		}
 	}
 	if (input->LeftShoulder)
 	{

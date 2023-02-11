@@ -158,7 +158,7 @@ void WinGetMouseInput(GLFWwindow* window, ControllerInput* input)
 	input->CameraAxisY = (float)mouseY;
 }
 
-static constexpr float DEADZONE_EPSILON = 0.15f;
+static constexpr float DEADZONE_EPSILON = 0.2f;
 
 inline static float WinFilterDeadzone(float value)
 {
@@ -180,12 +180,12 @@ void WinGetJoystickInput(GLFWwindow* window, ControllerInput* input)
 	{
 		input->IsAnalogue = true;
 		input->MovementAxisX = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]);
-		input->MovementAxisY = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
+		input->MovementAxisY = -WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
 		input->CameraAxisX = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
-		input->CameraAxisY = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
+		input->CameraAxisY = -WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
 
-		input->Up = (input->MovementAxisY < 0);
-		input->Down = (input->MovementAxisY > 0);
+		input->Up = (input->MovementAxisY > 0);
+		input->Down = (input->MovementAxisY < 0);
 		input->Left = (input->MovementAxisX < 0);
 		input->Right = (input->MovementAxisX > 0);
 
@@ -196,7 +196,10 @@ void WinGetJoystickInput(GLFWwindow* window, ControllerInput* input)
 
 		input->LeftShoulder = state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
 		input->RightShoulder = state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER];
-		input->Back = state.buttons[GLFW_GAMEPAD_BUTTON_BACK];
+		if (state.buttons[GLFW_GAMEPAD_BUTTON_BACK])
+		{
+			input->Back = true;
+		}
 	}
 	else
 	{

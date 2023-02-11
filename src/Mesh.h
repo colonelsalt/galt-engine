@@ -7,13 +7,18 @@ struct Vertex
 	glm::vec3 Position;
 	glm::vec3 Normal;
 	glm::vec2 TexCoords;
+	glm::vec3 Tangent;
+	glm::vec3 Bitangent;
 
 	// TODO: Bone data
 };
 
-enum class TextureType
+// Defining values here to correspond with Assimp's texture type enum for easy conversion
+enum TextureType
 {
-	DIFFUSE, SPECULAR
+	DIFFUSE = 1,
+	SPECULAR = 2,
+	NORMAL = 6
 };
 
 struct MeshTexture
