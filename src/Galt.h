@@ -26,6 +26,7 @@ struct GameMemory
 	bool IsInitialised;
 	bool OpenGlInitialised;
 	bool PendingScreenResize;
+	int FrameCounter;
 
 	uint64_t PermStorageSize;
 	void* PermStorage;

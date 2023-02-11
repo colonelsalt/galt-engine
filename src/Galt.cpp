@@ -8,6 +8,8 @@
 static GameMemory* g_Memory;
 static EntityMaster* g_EntityMaster;
 
+static constexpr int FRAMES_BETWEEN_RELOADS = 10;
+
 #include "Shader.cpp"
 #include "Primitives.cpp"
 #include "Camera.cpp"
@@ -85,10 +87,13 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		memory->IsInitialised = true;
 	}
 
-	for (int i = 0; i < ArrayCount(state->Shaders); i++)
+	if (memory->FrameCounter % FRAMES_BETWEEN_RELOADS == 0)
 	{
-		Shader* shader = &state->Shaders[i];
-		shader->ReloadIfNeeded();
+		for (int i = 0; i < ArrayCount(state->Shaders); i++)
+		{
+			Shader* shader = &state->Shaders[i];
+			shader->ReloadIfNeeded();
+		}
 	}
 
 	state->FpsCamera.Update(input);
@@ -104,6 +109,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	Light* lightLight = state->PointLight.GetComponent<Light>();
 	lightLight->Colour = { 1.0f, 1.0f, 1.0f };
+
+	state->FpsCamera.StickSensitivity = 0.017f;
 
 	RenderScene(state);
 }

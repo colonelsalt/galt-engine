@@ -5,6 +5,9 @@ struct ControllerInput
 	bool IsConnected;
 	bool IsAnalogue;
 	
+	float MovementAxisX;
+	float MovementAxisY;
+
 	float CameraAxisX;
 	float CameraAxisY;
 

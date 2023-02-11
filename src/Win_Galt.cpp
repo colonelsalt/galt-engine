@@ -11,6 +11,9 @@ static bool s_PendingScreenResize;
 static int s_ScreenWidth = 1280;
 static int s_ScreenHeight = 720;
 
+static int s_FrameCounter;
+constexpr static int FRAMES_BETWEEN_RELOADS = 10;
+
 inline FILETIME WinGetLastWriteTime(char* fileName)
 {
 	FILETIME lastWriteTime = {};
@@ -155,6 +158,52 @@ void WinGetMouseInput(GLFWwindow* window, ControllerInput* input)
 	input->CameraAxisY = (float)mouseY;
 }
 
+static constexpr float DEADZONE_EPSILON = 0.15f;
+
+inline static float WinFilterDeadzone(float value)
+{
+	if (abs(value) < DEADZONE_EPSILON)
+	{
+		return 0.0f;
+	}
+	else
+	{
+		return value;
+	}
+}
+
+void WinGetJoystickInput(GLFWwindow* window, ControllerInput* input)
+{
+	GLFWgamepadstate state;
+	if (glfwJoystickIsGamepad(GLFW_JOYSTICK_1)
+		&& glfwGetGamepadState(GLFW_JOYSTICK_1, &state))
+	{
+		input->IsAnalogue = true;
+		input->MovementAxisX = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]);
+		input->MovementAxisY = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
+		input->CameraAxisX = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
+		input->CameraAxisY = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
+
+		input->Up = (input->MovementAxisY < 0);
+		input->Down = (input->MovementAxisY > 0);
+		input->Left = (input->MovementAxisX < 0);
+		input->Right = (input->MovementAxisX > 0);
+
+		input->A = state.buttons[GLFW_GAMEPAD_BUTTON_A];
+		input->B = state.buttons[GLFW_GAMEPAD_BUTTON_B];
+		input->X = state.buttons[GLFW_GAMEPAD_BUTTON_X];
+		input->Y = state.buttons[GLFW_GAMEPAD_BUTTON_Y];
+
+		input->LeftShoulder = state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER];
+		input->RightShoulder = state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER];
+		input->Back = state.buttons[GLFW_GAMEPAD_BUTTON_BACK];
+	}
+	else
+	{
+		input->IsAnalogue = false;
+	}
+}
+
 void WinFrameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	s_PendingScreenResize = true;
@@ -275,17 +324,22 @@ int CALLBACK WinMain(HINSTANCE instance,
 		sprintf(latencyStr, "%.2fms; %dFPS\n", ms, fps);
 		OutputDebugStringA(latencyStr);
 
-		// Check if game code DLL needs reloading
-		FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
-		if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime) == 1)
+
+		if (s_FrameCounter++ % FRAMES_BETWEEN_RELOADS == 0)
 		{
-			WinUnloadGameCode(&game);
-			game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
-			gameMemory.OpenGlInitialised = false;
+			// Check if game code DLL needs reloading
+			FILETIME newDllWriteTime = WinGetLastWriteTime(gameDllFullPath);
+			if (CompareFileTime(&newDllWriteTime, &game.DllLastWriteTime) == 1)
+			{
+				WinUnloadGameCode(&game);
+				game = WinLoadGameCode(gameDllFullPath, tempDllFullPath);
+				gameMemory.OpenGlInitialised = false;
+			}
 		}
 
 		WinGetKeyboardInput(window, newInput);
 		WinGetMouseInput(window, newInput);
+		WinGetJoystickInput(window, newInput);
 		if (newInput->Back)
 		{
 			break;
@@ -299,6 +353,7 @@ int CALLBACK WinMain(HINSTANCE instance,
 			s_PendingScreenResize = false;
 		}
 
+		gameMemory.FrameCounter = s_FrameCounter;
 		if (game.UpdateAndRender)
 		{
 			game.UpdateAndRender(&gameMemory, newInput);

@@ -12,7 +12,8 @@ struct Camera
 	float Fov;
 	float Aspect;
 
-	float Sensitivity;
+	float MouseSensitivity;
+	float StickSensitivity;
 	float MoveSpeed;
 
 	glm::vec3 Position;

@@ -9,7 +9,8 @@ static Camera CreateCamera()
 	result.Up = { 0.0f, 1.0f, 0.0f };
 	result.Right = { 1.0f, 0.0f, 0.0f };
 
-	result.Sensitivity = 0.001f;
+	result.MouseSensitivity = 0.001f;
+	result.StickSensitivity = 0.017f;
 	result.MoveSpeed = 2.5f;
 
 	result.Fov = glm::pi<float>() / 4.0f;
@@ -25,8 +26,17 @@ void Camera::Update(ControllerInput* input)
 {
 	float speed = MoveSpeed * input->DeltaTime;
 
-	float xOffset = (input->CameraAxisX - input->LastInput->CameraAxisX) * Sensitivity;
-	float yOffset = (input->LastInput->CameraAxisY - input->CameraAxisY) * Sensitivity;
+	float xOffset, yOffset;
+	if (input->IsAnalogue)
+	{
+		xOffset = input->CameraAxisX * StickSensitivity;
+		yOffset = -input->CameraAxisY * StickSensitivity;
+	}
+	else
+	{
+		xOffset = (input->CameraAxisX - input->LastInput->CameraAxisX) * MouseSensitivity;
+		yOffset = (input->LastInput->CameraAxisY - input->CameraAxisY) * MouseSensitivity;
+	}
 
 	Yaw += xOffset;
 	Pitch = glm::clamp(Pitch + yOffset, -glm::pi<float>() / 2.0f, glm::pi<float>() / 2.0f);
