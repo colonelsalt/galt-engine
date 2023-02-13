@@ -11,6 +11,7 @@ struct Primitive : public Component
 
 	uint32_t DiffuseTextureId;
 	uint32_t SpecularTextureId;
+	uint32_t SkyboxTextureId;
 
 	Shader* p_Shader;
 

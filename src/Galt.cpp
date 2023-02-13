@@ -48,6 +48,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	if (!memory->IsInitialised)
 	{
+		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
@@ -69,9 +70,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		animShader->CompileProgram("SkinnedMeshVert.glsl",
 		                           "MeshFrag.glsl");
 
+		Shader* skyboxShader = &state->SkyboxShader;
+		skyboxShader->CompileProgram("SkyboxVert.glsl", "SkyboxFrag.glsl");
 
 		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane("wood.png");
+		state->Plane = CreatePlane("Grass_diffuse.jpg");
 		state->Plane.GetComponent<Primitive>()->p_Shader = basicPhongShader;
 
 		state->Cube = CreateCube("container.png", "container_specular.png");
@@ -104,6 +107,11 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		lightCube->p_Shader = flatColourShader;
 
 		lightLight->Type = LightType::POINT;
+
+		state->Skybox = CreateCube();
+		Primitive* cubePrimitive = state->Skybox.GetComponent<Primitive>();
+		cubePrimitive->SkyboxTextureId = LoadCubemap("assets/textures/skybox/");
+		cubePrimitive->p_Shader = &state->SkyboxShader;
 
 		RenderSetup(state);
 		memory->IsInitialised = true;

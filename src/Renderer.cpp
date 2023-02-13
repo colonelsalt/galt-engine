@@ -67,6 +67,9 @@ void RenderScene(GameState* state)
 	Transform* lightTransform = state->PointLight.Trans();
 	Assert(light && lightTransform && light->Type == LightType::POINT);
 
+	state->SkyboxShader.Bind();
+	state->SkyboxShader.SetMat4("u_TrimmedView", glm::mat4(glm::mat3(state->FpsCamera.View)));
+
 	state->FlatColourShader.Bind();
 	state->FlatColourShader.SetVec3("u_Colour", light->Colour);
 

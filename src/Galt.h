@@ -67,18 +67,20 @@ struct GameState
 	Entity Player;
 
 	Entity PointLight;
+	Entity Skybox;
 
 	AnimationClip* IdleClip;
 
 	union
 	{
-		Shader Shaders[5];
+		Shader Shaders[6];
 		struct
 		{
 			Shader PrimitiveShader;
 			Shader BasicPhongShader;
 			Shader MeshShader;
 			Shader AnimShader;
+			Shader SkyboxShader;
 			Shader FlatColourShader;
 		};
 	};

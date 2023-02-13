@@ -152,3 +152,72 @@ uint32_t LoadTextureEmbedded(const aiTexture* texture, TextureParams* texParams)
 
 	return textureId;
 }
+
+uint32_t LoadCubemap(const char* directoryPath)
+{
+	uint32_t textureId;
+	glGenTextures(1, &textureId);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+
+	int width, height, numChannels;
+	unsigned char* data;
+	constexpr char* faceNames[6] =
+	{
+		"px.png",
+		"nx.png",
+		"py.png",
+		"ny.png",
+		"nz.png",
+		"pz.png"
+	};
+	for (uint32_t i = 0; i < 6; i++)
+	{
+		char facePath[PATH_MAX];
+		CatStr(directoryPath, faceNames[i], facePath);
+		stbi_set_flip_vertically_on_load(false);
+		data = stbi_load(facePath, &width, &height, &numChannels, 0);
+		
+		GLenum imageFormat;
+		GLint internalFormat;
+		if (numChannels == 1)
+		{
+			imageFormat = GL_RED;
+			internalFormat = GL_RED;
+		}
+		else if (numChannels == 3)
+		{
+			imageFormat = GL_RGB;
+			internalFormat = GL_RGB;
+		}
+		else if (numChannels == 4)
+		{
+			imageFormat = GL_RGBA;
+			internalFormat = GL_RGBA;
+		}
+
+
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			             0,
+			             internalFormat,
+			             width, height,
+			             0,
+			             imageFormat,
+			             GL_UNSIGNED_BYTE,
+			             data);
+			stbi_image_free(data);
+		}
+		else
+		{
+			Assert(false);
+		}
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return textureId;
+}

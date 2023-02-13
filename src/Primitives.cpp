@@ -15,21 +15,44 @@ void Primitive::Draw()
 	p_Shader->Bind();
 	p_Shader->SetMat4("u_Model", transform->Global);
 	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, DiffuseTextureId);
-	p_Shader->SetInt("u_DiffuseTexture", 0);
-	glActiveTexture(GL_TEXTURE1);
-	if (SpecularTextureId)
+	int textureIndex = 0;
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
+	if (DiffuseTextureId)
 	{
-		glBindTexture(GL_TEXTURE_2D, SpecularTextureId);
-		p_Shader->SetInt("u_SpecTexture", 1);
+		glBindTexture(GL_TEXTURE_2D, DiffuseTextureId);
+		p_Shader->SetInt("u_DiffuseTexture", textureIndex++);
 	}
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
+	if (SpecularTextureId)
+	{
+		glBindTexture(GL_TEXTURE_2D, SpecularTextureId);
+		p_Shader->SetInt("u_SpecTexture", textureIndex++);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
+	if (SkyboxTextureId)
+	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP, SkyboxTextureId);
+		p_Shader->SetInt("u_SkyboxTexture", textureIndex++);
+		glCullFace(GL_FRONT);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
+
 	glDrawArrays(GL_TRIANGLES, 0, NumVertices);
+
+	glCullFace(GL_BACK);
 }
 
 static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t verticesSize)
@@ -66,13 +89,13 @@ static Entity CreatePlane(char* textureName)
 	constexpr float vertices[] = 
 	{
 		// positions            // normals         // texcoords
-		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-		 -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		 -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
 		-25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
 
-		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f,
-		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f
 	};
 	primitive->NumVertices = ArrayCount(vertices) / 8;
 	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
@@ -81,10 +104,13 @@ static Entity CreatePlane(char* textureName)
 }
 
 static void PopulateCube(Primitive* outCube,
-                         char* textureName,
+                         char* diffuseTextureName = nullptr,
                          char* specularTextureName = nullptr)
 {
-	outCube->DiffuseTextureId = LoadTexture(textureName);
+	if (diffuseTextureName)
+	{
+		outCube->DiffuseTextureId = LoadTexture(diffuseTextureName);
+	}
 	if (specularTextureName)
 	{
 		outCube->SpecularTextureId = LoadTexture(specularTextureName);
@@ -139,7 +165,8 @@ static void PopulateCube(Primitive* outCube,
 	outCube->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 }
 
-static Entity CreateCube(char* diffuseTextureName, char* specularTextureName = nullptr)
+static Entity CreateCube(char* diffuseTextureName = nullptr,
+                         char* specularTextureName = nullptr)
 {
 	Entity entity = g_EntityMaster->CreateEntity("Cube");
 
