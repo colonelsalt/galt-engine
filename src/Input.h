@@ -4,6 +4,9 @@ struct ControllerInput
 {
 	bool IsConnected;
 	bool IsAnalogue;
+
+	float LeftTrigger;
+	float RightTrigger;
 	
 	float MovementAxisX;
 	float MovementAxisY;

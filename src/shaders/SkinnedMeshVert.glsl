@@ -19,7 +19,10 @@ const int MAX_TOTAL_BONES = 100;
 const int MAX_BONES_PER_VERTEX = 4;
 
 // TODO: Convert to uniform buffer
-uniform mat4 u_SkinningMatrices[MAX_TOTAL_BONES];
+layout(std140, binding = 1) uniform SkinBuffer
+{
+	uniform mat4 u_SkinningMatrices[MAX_TOTAL_BONES];
+};
 
 out vec2 v_TexCoords;
 out mat3 v_Tbn;

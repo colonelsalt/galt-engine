@@ -23,6 +23,7 @@ static constexpr int FRAMES_BETWEEN_RELOADS = 10;
 #include "EntityMaster.cpp"
 #include "AnimationClip.cpp"
 #include "Animator.cpp"
+#include "Player.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -85,6 +86,14 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		Animator* playerAnimator = state->Player.AddComponent<Animator>();
 		playerAnimator->Init(state->IdleClip);
 
+		Player* playerPlayer = state->Player.AddComponent<Player>();
+		playerPlayer->Init();
+
+		Transform* playerTransform = state->Player.Trans();
+		playerTransform->SetScale( { 0.15f, 0.15f, 0.15f });
+
+		glm::vec3* playerPos = playerTransform->Position();
+		*playerPos = { -2.0f, -0.45f, -1.0f };
 
 		SetShaderInHierarchy(state->Player.Trans(), animShader);
 
@@ -109,19 +118,12 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		}
 	}
 
-
 	Transform* lightTransform = state->PointLight.Trans();
 	glm::vec3* lightPos = lightTransform->Position();
 	
 	lightTransform->SetScale( { 0.25f, 0.25f, 0.25f });
 
 	*lightPos = { 1.0f, 3.0f, 0.0f };
-
-	Transform* playerTransform = state->Player.Trans();
-	glm::vec3* playerPos = playerTransform->Position();
-
-	*playerPos = { -2.0f, -0.45f, -1.0f };
-	playerTransform->SetScale( { 0.15f, 0.15f, 0.15f });
 
 	Light* lightLight = state->PointLight.GetComponent<Light>();
 	lightLight->Colour = { 1.0f, 1.0f, 1.0f };
@@ -136,6 +138,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	Animator* animators = g_EntityMaster->GetAllComponents<Animator>();
 	Assert(numAnimators == 1);
 
+	Player* player = state->Player.GetComponent<Player>();
+	player->Update(input, &state->FpsCamera);
 
 	// Update root transforms (and recursively all their children)
 	uint32_t numTransforms = g_EntityMaster->NumComponents(ComponentType::TRANSFORM);
@@ -152,13 +156,6 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	Animator* playerAnimator = &animators[0];
 	playerAnimator->Update(input->DeltaTime);
-	state->AnimShader.Bind();
-	for (uint32_t i = 0; i < MAX_TOTAL_BONES; i++)
-	{
-		char uniformName[32];
-		sprintf(uniformName, "u_SkinningMatrices[%d]", i);
-		state->AnimShader.SetMat4(uniformName, playerAnimator->SkinningMatrices[i]);
-	}
 
 	RenderScene(state);
 }

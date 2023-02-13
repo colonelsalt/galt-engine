@@ -3,6 +3,7 @@
 #include "NameTag.h"
 #include "Lights.h"
 #include "Animator.h"
+#include "Player.h"
 
 template <typename T>
 static void InitComponentType()
@@ -36,4 +37,5 @@ void EntityMaster::InitComponents()
 	InitComponentType<NameTag>();
 	InitComponentType<Light>();
 	InitComponentType<Animator>();
+	InitComponentType<Player>();
 }

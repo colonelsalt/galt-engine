@@ -58,6 +58,7 @@ struct GameState
 	EntityMaster EntityMasterInstance;
 
 	uint32_t ProjViewUniformBuffer;
+	uint32_t SkinningMatricesUniformBuffer;
 
 	Camera FpsCamera;
 	Entity Plane;

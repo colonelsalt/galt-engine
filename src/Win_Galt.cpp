@@ -184,10 +184,13 @@ void WinGetJoystickInput(GLFWwindow* window, ControllerInput* input)
 		input->CameraAxisX = WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
 		input->CameraAxisY = -WinFilterDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
 
-		input->Up = (input->MovementAxisY > 0);
-		input->Down = (input->MovementAxisY < 0);
-		input->Left = (input->MovementAxisX < 0);
-		input->Right = (input->MovementAxisX > 0);
+		input->LeftTrigger = state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER];
+		input->LeftTrigger = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER];
+
+		input->Up = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_UP];;
+		input->Down = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_DOWN];
+		input->Left = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_LEFT];
+		input->Right = state.buttons[GLFW_GAMEPAD_BUTTON_DPAD_RIGHT];
 
 		input->A = state.buttons[GLFW_GAMEPAD_BUTTON_A];
 		input->B = state.buttons[GLFW_GAMEPAD_BUTTON_B];

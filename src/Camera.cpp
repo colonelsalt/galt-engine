@@ -19,10 +19,27 @@ static Camera CreateCamera()
 	result.View = glm::translate(glm::mat4(1.0f), -result.Position);
 	result.Projection = glm::perspective(result.Fov, result.Aspect, 0.1f, 100.0f);
 
+	result.OffsetFromPlayer = { 0.0f, 4.65f, -6.79f };
+
 	return result;
 }
 
 void Camera::Update(ControllerInput* input)
+{
+	if (p_Player)
+	{
+		glm::vec3* playerPos = p_Player->Trans()->Position();
+		Position = *playerPos + OffsetFromPlayer;
+		
+		View = glm::lookAt(Position, *playerPos, Up);
+
+		FreezeMovement = true;
+	}
+	FpsUpdate(input);
+	
+}
+
+void Camera::FpsUpdate(ControllerInput* input)
 {
 	float speed = MoveSpeed * input->DeltaTime;
 
@@ -49,10 +66,18 @@ void Camera::Update(ControllerInput* input)
 
 	Right = glm::normalize(glm::cross(Forward, Up));
 
+	if (input->X && !input->LastInput->X)
+	{
+		FreezeMovement = !FreezeMovement;
+	}
+
 	if (input->IsAnalogue)
 	{
 		glm::vec3 movementDir = input->MovementAxisX * Right + input->MovementAxisY * Forward;
-		Position += movementDir * speed;
+		if (!FreezeMovement)
+		{
+			Position += movementDir * speed;
+		}
 	}
 	else
 	{

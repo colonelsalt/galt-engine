@@ -1,9 +1,8 @@
 #include "Lights.h"
+#include "Animator.h"
 
 void RenderSetup(GameState* state)
 {
-	//glEnable(GL_MULTISAMPLE);
-
 	// Set up ProjView uniform buffer
 	glGenBuffers(1, &state->ProjViewUniformBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, state->ProjViewUniformBuffer);
@@ -25,6 +24,20 @@ void RenderSetup(GameState* state)
 	                0,
 	                sizeof(glm::mat4),
 	                glm::value_ptr(state->FpsCamera.Projection));
+
+	// Set up skinning matrices uniform buffer
+	glGenBuffers(1, &state->SkinningMatricesUniformBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, state->SkinningMatricesUniformBuffer);
+	glBufferData(GL_UNIFORM_BUFFER,
+	             MAX_TOTAL_BONES * sizeof(glm::mat4),
+	             nullptr,
+	             GL_STATIC_DRAW);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER,
+	                  1,
+	                  state->SkinningMatricesUniformBuffer,
+	                  0,
+	                  MAX_TOTAL_BONES * sizeof(glm::mat4));
 }
 
 void RenderScene(GameState* state)
@@ -32,12 +45,24 @@ void RenderScene(GameState* state)
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	Animator* playerAnimator = state->Player.GetComponent<Animator>();
+	Assert(playerAnimator);
+
 	// Send view matrix to uniform buffer
 	glBindBuffer(GL_UNIFORM_BUFFER, state->ProjViewUniformBuffer);
 	glBufferSubData(GL_UNIFORM_BUFFER,
 	                sizeof(glm::mat4),
 	                sizeof(glm::mat4),
 	                glm::value_ptr(state->FpsCamera.View));
+	
+	// Send skinning matrices to uniform buffer
+	glBindBuffer(GL_UNIFORM_BUFFER, state->SkinningMatricesUniformBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER,
+	                0,
+	                MAX_TOTAL_BONES * sizeof(glm::mat4),
+	                playerAnimator->SkinningMatrices);
+
+
 	Light* light = state->PointLight.GetComponent<Light>();
 	Transform* lightTransform = state->PointLight.Trans();
 	Assert(light && lightTransform && light->Type == LightType::POINT);

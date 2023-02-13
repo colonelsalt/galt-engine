@@ -1,6 +1,7 @@
 #include "Transform.h"
 
 #include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 void Transform::Init()
 {
@@ -20,19 +21,17 @@ void Transform::AllocChildren(uint32_t numChildren)
 
 }
 
-void Transform::SetRotation(float yaw, float pitch, float roll)
+// Preserves original scale
+void Transform::SetRotation(float radians, const glm::vec3& axis)
 {
-	glm::vec3* translation = Position();
-	glm::vec3 scale = GetScale();
+	glm::vec3 translation;
+	glm::quat rotation;
+	glm::vec3 scale;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(Local, scale, rotation, translation, skew, perspective);
 
-	glm::mat4 rotation = glm::yawPitchRoll(glm::radians(yaw),
-	                                       glm::radians(pitch),
-	                                       glm::radians(roll));
-
-	// TODO: Fix retaining original scale here
-
-	//Model = rotation;
-	Local = glm::translate(glm::mat4(1.0f), *translation);
-	Local *= rotation;
-	//Model *= glm::scale(glm::mat4(1.0f), scale);
+	Local = glm::translate(glm::mat4(1.0f), translation)
+		* glm::rotate(glm::mat4(1.0f), radians, axis)
+		* glm::scale(glm::mat4(1.0f), scale);
 }

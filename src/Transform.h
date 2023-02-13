@@ -44,6 +44,11 @@ struct Transform : public Component
 		return *(glm::vec3*)&Local[2];
 	}
 
+	inline const glm::vec3& Up()
+	{
+		return *(glm::vec3*)&Local[1];
+	}
+
 	inline const glm::vec3 GetScale()
 	{
 		return { Local[0][0], Local[1][1], Local[2][2] };
@@ -56,6 +61,10 @@ struct Transform : public Component
 		Local[2][2] = scale.z;
 	}
 
+	void LookDir(const glm::vec3& forward);
+
 	void SetRotation(float yaw, float pitch, float roll);
+
+	void SetRotation(float degrees, const glm::vec3& axis);
 
 };
