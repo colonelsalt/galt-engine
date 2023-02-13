@@ -67,9 +67,11 @@ static void LoadTextureFromMaterial(aiMaterial* material,
 static void ParseMesh(aiMesh* assimpMesh, 
                       const aiScene* scene,
                       Entity entity,
+                      Skeleton* skeleton,
                       char* directoryPath)
 {
 	Mesh* outMesh = entity.AddComponent<Mesh>();
+	outMesh->p_Skeleton = skeleton;
 	Assert(outMesh);
 
 	outMesh->NumVertices = assimpMesh->mNumVertices;
@@ -85,7 +87,8 @@ static void ParseMesh(aiMesh* assimpMesh,
 	for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 	{
 		Vertex* ourVertex = &outMesh->a_Vertices[i];
-		
+		ourVertex->ResetBoneData();
+
 		aiVector3D* aiPos = &assimpMesh->mVertices[i];
 		aiVector3D* aiNormal = &assimpMesh->mNormals[i];
 		aiVector3D* aiTangent = &assimpMesh->mTangents[i];
@@ -118,7 +121,42 @@ static void ParseMesh(aiMesh* assimpMesh,
 			outMesh->a_Indices[i * 3 + j] = face->mIndices[j];
 		}
 	}
+	// Parse bones
+	for (uint32_t i = 0; i < assimpMesh->mNumBones; i++)
+	{
+		aiBone* aiBone = assimpMesh->mBones[i];
 
+		char* boneName = aiBone->mName.data;
+		Entity boneEntity = g_EntityMaster->GetOrCreateEntity(boneName);
+		Assert(boneEntity);
+
+		int boneId = skeleton->EntityToBoneId[boneEntity];
+		if (boneId == -1)
+		{
+			// New bone we haven't seen before
+			boneId = skeleton->NumBones++;
+			Assert(boneId < MAX_TOTAL_BONES);
+
+			skeleton->Bones[boneId] = { boneId, AssimpToGlmMatrix(aiBone->mOffsetMatrix) };
+			skeleton->EntityToBoneId[boneEntity] = boneId;
+		}
+		Assert(boneId < MAX_TOTAL_BONES);
+
+		uint32_t numVerticesInBone = aiBone->mNumWeights;
+		aiVertexWeight* weights = aiBone->mWeights;
+
+		// Go through all vertices which are influenced by this bone
+		for (uint32_t j = 0; j < numVerticesInBone; j++)
+		{
+			uint32_t vertexId = weights[j].mVertexId;
+			float weight = weights[j].mWeight;
+
+			Assert(vertexId < outMesh->NumVertices);
+			outMesh->a_Vertices[vertexId].SetBoneInfluence(boneId, weight);
+		}
+	}
+
+	// Extract textures
 	if (assimpMesh->mMaterialIndex >= 0)
 	{
 		outMesh->NumTextures = 0;
@@ -166,16 +204,23 @@ static void ParseMesh(aiMesh* assimpMesh,
 
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+
+	glEnableVertexAttribArray(5);
+	glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, BoneIds));
+
+	glEnableVertexAttribArray(6);
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, BoneWeights));
 }
 
 static void ParseNode(aiNode* node,
                       const aiScene* scene,
                       Entity entity,
+                      Skeleton* skeleton,
                       char* directoryPath)
 {
 	Transform* transform = entity.Trans();
 	Assert(transform);
-	transform->Model = AssimpToGlmMatrix(node->mTransformation);
+	transform->Local = AssimpToGlmMatrix(node->mTransformation);
 	transform->AllocChildren(node->mNumChildren);
 
 	for (uint32_t i = 0; i < node->mNumMeshes; i++)
@@ -183,16 +228,16 @@ static void ParseNode(aiNode* node,
 		aiMesh* assimpMesh = scene->mMeshes[node->mMeshes[i]];
 		Assert(assimpMesh);
 
-		// TODO: Handle submeshes properly
-		ParseMesh(assimpMesh, scene, entity, directoryPath);
+		ParseMesh(assimpMesh, scene, entity, skeleton, directoryPath);
 	}
 
 	for (uint32_t i = 0; i < node->mNumChildren; i++)
 	{
-		char* childName = node->mName.data;
-		Entity childEntity = g_EntityMaster->CreateEntity(childName);
+		char* childName = node->mChildren[i]->mName.data;
+		Entity childEntity = g_EntityMaster->GetOrCreateEntity(childName);
+		Assert(childEntity);
 
-		ParseNode(node->mChildren[i], scene, childEntity, directoryPath);
+		ParseNode(node->mChildren[i], scene, childEntity, skeleton, directoryPath);
 		transform->a_Children[i] = childEntity.Trans();
 		transform->a_Children[i]->p_Parent = transform;
 	}
@@ -225,7 +270,9 @@ static Entity LoadMesh(const char* modelName)
 	directoryPath[lastSlashIndex + 1] = 0;
 
 	Entity rootEntity = g_EntityMaster->CreateEntity(rootMeshName);
-	ParseNode(scene->mRootNode, scene, rootEntity, filePath);
+	Skeleton* skeleton = (Skeleton*)g_Memory->TempAlloc(sizeof(Skeleton));
+	skeleton->Init();
+	ParseNode(scene->mRootNode, scene, rootEntity, skeleton, filePath);
 	return rootEntity;
 }
 
@@ -245,7 +292,7 @@ void Mesh::Draw()
 	Transform* transform = ThisEntity.Trans();
 	Assert(transform);
 
-	p_Shader->SetMat4("u_Model", transform->WorldSpace());
+	p_Shader->SetMat4("u_Model", transform->Global);
 	
 	for (uint32_t i = 0; i < NumTextures; i++)
 	{

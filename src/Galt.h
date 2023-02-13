@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Entity.h"
 #include "EntityMaster.h"
+#include "AnimationClip.h"
 
 struct FileResult
 {
@@ -66,14 +67,17 @@ struct GameState
 
 	Entity PointLight;
 
+	AnimationClip* IdleClip;
+
 	union
 	{
-		Shader Shaders[4];
+		Shader Shaders[5];
 		struct
 		{
 			Shader PrimitiveShader;
 			Shader BasicPhongShader;
 			Shader MeshShader;
+			Shader AnimShader;
 			Shader FlatColourShader;
 		};
 	};

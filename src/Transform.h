@@ -6,7 +6,8 @@
 
 struct Transform : public Component
 {
-	glm::mat4 Model;
+	glm::mat4 Local;
+	glm::mat4 Global;
 
 	Transform* p_Parent;
 	Transform** a_Children;
@@ -17,40 +18,42 @@ struct Transform : public Component
 
 	COMPONENT_DEF(ComponentType::TRANSFORM, MAX_TRANSFORMS);
 
-	void CompInit();
+	void Init();
 
 	void AllocChildren(uint32_t numChildren);
 
-	inline glm::mat4 WorldSpace()
+	inline void Update(glm::mat4 parentTransform = glm::mat4(1.0f))
 	{
-		if (!p_Parent)
+		Global = parentTransform * Local;
+		for (uint32_t i = 0; i < NumChildren; i++)
 		{
-			return Model;
+			Transform* child = a_Children[i];
+			Assert(child);
+			child->Update(Global);
 		}
-		return p_Parent->WorldSpace() * Model;
 	}
 
 	inline glm::vec3* Position()
 	{
-		return (glm::vec3*)&Model[3];
+		return (glm::vec3*)&Local[3];
 	}
 
 	// Is this right??
 	inline const glm::vec3 Forward()
 	{
-		return *(glm::vec3*)&Model[2];
+		return *(glm::vec3*)&Local[2];
 	}
 
 	inline const glm::vec3 GetScale()
 	{
-		return { Model[0][0], Model[1][1], Model[2][2] };
+		return { Local[0][0], Local[1][1], Local[2][2] };
 	}
 
 	inline void SetScale(const glm::vec3& scale)
 	{
-		Model[0][0] = scale.x;
-		Model[1][1] = scale.y;
-		Model[2][2] = scale.z;
+		Local[0][0] = scale.x;
+		Local[1][1] = scale.y;
+		Local[2][2] = scale.z;
 	}
 
 	void SetRotation(float yaw, float pitch, float roll);

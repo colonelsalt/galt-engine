@@ -13,7 +13,7 @@ void Primitive::Draw()
 
 	glBindVertexArray(VertexArrayId);
 	p_Shader->Bind();
-	p_Shader->SetMat4("u_Model", transform->WorldSpace());
+	p_Shader->SetMat4("u_Model", transform->Global);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, DiffuseTextureId);

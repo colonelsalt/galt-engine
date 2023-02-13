@@ -2,6 +2,7 @@
 
 #include "NameTag.h"
 #include "Lights.h"
+#include "Animator.h"
 
 template <typename T>
 static void InitComponentType()
@@ -21,8 +22,9 @@ Entity EntityMaster::CreateEntity(char* name)
 	nameTag->Init(name);
 
 	Transform* transform = AddComponent<Transform>(entity);
-	transform->CompInit();
+	transform->Init();
 
+	EntityNameMap.Add(name, (int)entity);
 	return entity;
 }
 
@@ -33,4 +35,5 @@ void EntityMaster::InitComponents()
 	InitComponentType<Primitive>();
 	InitComponentType<NameTag>();
 	InitComponentType<Light>();
+	InitComponentType<Animator>();
 }

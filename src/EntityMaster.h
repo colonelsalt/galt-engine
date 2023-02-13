@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ComponentTable.h"
+#include "HashMap.h"
 
 struct EntityMaster
 {
@@ -10,10 +11,31 @@ struct EntityMaster
 
 	// Entity has component c if bit (1 << c) is set
 	uint32_t ComponentBitSet[MAX_ENTITIES];
+	HashMap EntityNameMap;
 
 	void InitComponents();
 
 	Entity CreateEntity(char* name);
+
+	inline Entity GetEntityByName(char* name)
+	{
+		int entityId = EntityNameMap.Get(name);
+		if (entityId == -1)
+		{
+			return { 0 };
+		}
+		return { (uint32_t)entityId };
+	}
+
+	inline Entity GetOrCreateEntity(char* name)
+	{
+		Entity entity = GetEntityByName(name);
+		if (entity)
+		{
+			return entity;
+		}
+		return CreateEntity(name);
+	}
 
 	template <typename T>
 	inline bool HasComponent(Entity entity)

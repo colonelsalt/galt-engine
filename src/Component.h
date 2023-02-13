@@ -7,12 +7,14 @@ constexpr uint32_t MAX_MESHES = 30;
 constexpr uint32_t MAX_PRIMITIVES = 5;
 constexpr uint32_t MAX_NAME_TAGS = MAX_ENTITIES;
 constexpr uint32_t MAX_LIGHTS = 1;
+constexpr uint32_t MAX_ANIMATORS = 1;
 
 enum ComponentType
 {
 	INVALID = -1,
 	TRANSFORM = 0, MESH = 1, PRIMITIVE = 2, NAME_TAG = 3, LIGHT = 4,
-	NUM_COMPONENTS = 5
+	ANIMATOR = 5,
+	NUM_COMPONENTS = 6
 };
 
 inline bool ValidComponentType(ComponentType type)

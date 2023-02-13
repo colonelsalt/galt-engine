@@ -2,9 +2,9 @@
 
 #include <glm/gtx/euler_angles.hpp>
 
-void Transform::CompInit()
+void Transform::Init()
 {
-	Model = glm::mat4(1.0f);
+	Local = glm::mat4(1.0f);
 }
 
 void Transform::AllocChildren(uint32_t numChildren)
@@ -32,7 +32,7 @@ void Transform::SetRotation(float yaw, float pitch, float roll)
 	// TODO: Fix retaining original scale here
 
 	//Model = rotation;
-	Model = glm::translate(glm::mat4(1.0f), *translation);
-	Model *= rotation;
+	Local = glm::translate(glm::mat4(1.0f), *translation);
+	Local *= rotation;
 	//Model *= glm::scale(glm::mat4(1.0f), scale);
 }
