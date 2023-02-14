@@ -57,8 +57,14 @@ struct AnimationClip
 	float LocalTicksPerSecond;
 	bool ShouldLoop;
 
-	uint32_t NumBoneClips;
-	BoneClip* a_BoneClips[MAX_ENTITIES];
+	uint32_t NumBoneClips; // Probably unneeded since bone array has constant size
+	BoneClip* ap_BoneClips[MAX_ENTITIES];
+	BonePose* ap_BonePoses[MAX_ENTITIES];
+
+	AnimationClip* p_SourceClip;
+	AnimationClip* p_TargetClip;
+	float TargetWeight;
 
 	void Update(float animationTime);
+	BonePose* GetBonePoses();
 };

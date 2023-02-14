@@ -28,6 +28,22 @@ static constexpr int FRAMES_BETWEEN_RELOADS = 10;
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+static void UpdateTransforms()
+{
+	// Update root transforms (and recursively all their children)
+	uint32_t numTransforms = g_EntityMaster->NumComponents(ComponentType::TRANSFORM);
+	Transform* transforms = g_EntityMaster->GetAllComponents<Transform>();
+	for (uint32_t i = 0; i < numTransforms; i++)
+	{
+		Transform* transform = &transforms[i];
+		Assert(transform);
+		if (!transform->p_Parent)
+		{
+			transform->Update();
+		}
+	}
+}
+
 extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* input)
 {
 	Assert(sizeof(GameState) <= memory->PermStorageSize);
@@ -74,10 +90,10 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		skyboxShader->CompileProgram("SkyboxVert.glsl", "SkyboxFrag.glsl");
 
 		state->FpsCamera = CreateCamera();
-		state->Plane = CreatePlane("Grass_diffuse.jpg");
+		state->Plane = CreatePlane("Plane", "Grass_diffuse.jpg");
 		state->Plane.GetComponent<Primitive>()->p_Shader = basicPhongShader;
 
-		state->Cube = CreateCube("container.png", "container_specular.png");
+		state->Cube = CreateCube("Box", "container.png", "container_specular.png");
 		state->Cube.GetComponent<Primitive>()->p_Shader = basicPhongShader;
 
 		state->Cube.Trans()->Position()->y = 0.5001f;
@@ -89,14 +105,14 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		Animator* playerAnimator = state->Player.AddComponent<Animator>();
 		playerAnimator->Init(state->IdleClip);
 
+		glm::vec3* playerPos = state->Player.Trans()->Position();
+		*playerPos = { -2.0f, -0.45f, -1.0f };
 		Player* playerPlayer = state->Player.AddComponent<Player>();
 		playerPlayer->Init();
 
 		Transform* playerTransform = state->Player.Trans();
 		playerTransform->SetScale( { 0.15f, 0.15f, 0.15f });
 
-		glm::vec3* playerPos = playerTransform->Position();
-		*playerPos = { -2.0f, -0.45f, -1.0f };
 
 		SetShaderInHierarchy(state->Player.Trans(), animShader);
 
@@ -108,10 +124,12 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 		lightLight->Type = LightType::POINT;
 
-		state->Skybox = CreateCube();
+		state->Skybox = CreateCube("Skybox");
 		Primitive* cubePrimitive = state->Skybox.GetComponent<Primitive>();
 		cubePrimitive->SkyboxTextureId = LoadCubemap("assets/textures/skybox/");
 		cubePrimitive->p_Shader = &state->SkyboxShader;
+
+		UpdateTransforms();
 
 		RenderSetup(state);
 		memory->IsInitialised = true;
@@ -136,8 +154,6 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	Light* lightLight = state->PointLight.GetComponent<Light>();
 	lightLight->Colour = { 1.0f, 1.0f, 1.0f };
 
-	state->FpsCamera.StickSensitivity = 0.017f;
-	
 	// Update camera
 	state->FpsCamera.Update(input);
 
@@ -149,21 +165,10 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	Player* player = state->Player.GetComponent<Player>();
 	player->Update(input, &state->FpsCamera);
 
-	// Update root transforms (and recursively all their children)
-	uint32_t numTransforms = g_EntityMaster->NumComponents(ComponentType::TRANSFORM);
-	Transform* transforms = g_EntityMaster->GetAllComponents<Transform>();
-	for (uint32_t i = 0; i < numTransforms; i++)
-	{
-		Transform* transform = &transforms[i];
-		Assert(transform);
-		if (!transform->p_Parent)
-		{
-			transform->Update();
-		}
-	}
-
 	Animator* playerAnimator = &animators[0];
 	playerAnimator->Update(input->DeltaTime);
+
+	//UpdateTransforms();
 
 	RenderScene(state);
 }

@@ -50,10 +50,10 @@ void Animator::UpdateSkinningMatrices(Transform* transform,
 	glm::mat4 localTransform = transform->Local;
 
 	Entity entity = transform->ThisEntity;
-	if (p_Clip->a_BoneClips[entity])
+	if (p_Clip->ap_BoneClips[entity])
 	{
 		// If bone is animated, use its animated transform
-		BonePose localPose = p_Clip->a_BoneClips[entity]->LocalPose;
+		BonePose localPose = p_Clip->ap_BoneClips[entity]->LocalPose;
 
 		localTransform = glm::translate(glm::mat4(1.0f), localPose.Translation)
 			* glm::toMat4(localPose.Rotation)
@@ -62,7 +62,6 @@ void Animator::UpdateSkinningMatrices(Transform* transform,
 
 	glm::mat4 modelSpaceTransform = parentTransform * localTransform;
 	
-	NameTag* name = entity.GetComponent<NameTag>();
 	int boneId = p_Skeleton->EntityToBoneId[entity];
 	Assert(boneId < MAX_TOTAL_BONES);
 	if (boneId > -1)

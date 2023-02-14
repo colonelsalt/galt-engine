@@ -24,6 +24,9 @@ struct Transform : public Component
 
 	inline void Update(glm::mat4 parentTransform = glm::mat4(1.0f))
 	{
+		//Global = Local;
+		//return;
+
 		Global = parentTransform * Local;
 		for (uint32_t i = 0; i < NumChildren; i++)
 		{

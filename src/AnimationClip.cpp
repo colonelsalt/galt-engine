@@ -4,7 +4,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-AnimationClip* ParseAnimationClip(char* animationFileName)
+static AnimationClip* ParseAnimationClip(char* animationFileName)
 {
 	// TODO: Automatic file path
 	char filePath[PATH_MAX];
@@ -32,7 +32,7 @@ AnimationClip* ParseAnimationClip(char* animationFileName)
 		Entity boneEntity = g_EntityMaster->GetEntityByName(boneName);
 
 		BoneClip* boneClip = (BoneClip*)g_Memory->TempAlloc(sizeof(BoneClip));
-		animationClip->a_BoneClips[boneEntity] = boneClip;
+		animationClip->ap_BoneClips[boneEntity] = boneClip;
 		boneClip->EntityHandle = boneEntity;
 
 		// Parse position keyframes
@@ -73,6 +73,8 @@ AnimationClip* ParseAnimationClip(char* animationFileName)
 	return animationClip;
 }
 
+
+
 template <typename T>
 static uint32_t GetKeyIndex(T* keys, uint32_t numkeys, float animationTime)
 {
@@ -91,15 +93,52 @@ static float GetLerpParam(float prevKeyTime, float nextKeyTime, float currentTim
 	return (currentTime - prevKeyTime) / (nextKeyTime - prevKeyTime);
 }
 
+static void BlendPoses(BonePose** blendedPoses,
+                       BonePose** sourcePoses,
+                       BonePose** targetPoses,
+                       float t)
+{
+	for (uint32_t i = 0; i < MAX_ENTITIES; i++)
+	{
+		BonePose* sourcePose = sourcePoses[i];
+		BonePose* targetPose = targetPoses[i];
+		BonePose* blendedPose = blendedPoses[i];
+		
+		// Either all three exist or none of them do
+		if (!sourcePose || !targetPose || !blendedPose)
+		{
+			Assert(!sourcePose && !targetPose && !blendedPose);
+			continue;
+		}
+		Assert(sourcePose && targetPose && blendedPose);
+
+		blendedPose->Translation = glm::mix(sourcePose->Translation, targetPose->Translation, t);
+		blendedPose->Rotation = glm::slerp(sourcePose->Rotation, targetPose->Rotation, t);
+		blendedPose->Scale = glm::mix(sourcePose->Scale, targetPose->Scale, t);
+	}
+}
+
 void AnimationClip::Update(float animationTime)
 {
 	for (uint32_t i = 0; i < MAX_ENTITIES; i++)
 	{
-		BoneClip* boneClip = a_BoneClips[i];
+		BoneClip* boneClip = ap_BoneClips[i];
 		if (boneClip)
 		{
 			boneClip->Update(animationTime);
+			ap_BonePoses[i] = &boneClip->LocalPose;
 		}
+		if (p_SourceClip && p_TargetClip)
+		{
+			p_SourceClip->Update(animationTime);
+			p_TargetClip->Update(animationTime);
+
+			BlendPoses(ap_BonePoses,
+			           p_SourceClip->ap_BonePoses,
+			           p_TargetClip->ap_BonePoses,
+			           TargetWeight);
+		}
+
 	}
 }
 

@@ -1,5 +1,18 @@
 #include "Player.h"
 
+enum PlayerAnimationTriggers
+{
+	LOCOMOTION,
+	JUMP,
+	IDLE
+};
+
+enum PlayerAnimationBlends
+{
+	WALK,
+	RUN
+};
+
 void Player::Init()
 {
 	WalkSpeed = 5.0f;
@@ -14,24 +27,6 @@ void Player::Init()
 	Assert(p_Animator);
 }
 
-static float Max(float a, float b)
-{
-	if (a > b)
-	{
-		return a;
-	}
-	return b;
-}
-
-static float Abs(float x)
-{
-	if (x < 0)
-	{
-		return -x;
-	}
-	return x;
-}
-
 void Player::Update(ControllerInput* input, Camera* camera)
 {
 	constexpr glm::vec3 UP = { 0.0f, 1.0f, 0.0f };
@@ -39,6 +34,10 @@ void Player::Update(ControllerInput* input, Camera* camera)
 	constexpr glm::vec3 BACK = { 0.0f, 0.0f, 1.0f };
 	constexpr glm::vec3 LEFT = { -1.0f, 0.0f, 0.0f };
 	constexpr glm::vec3 RIGHT = { 1.0f, 0.0f, 0.0f };
+
+	WalkSpeed = 20.0f;
+	JumpHeight = 20.0f;
+	Gravity = 100.0f;
 
 	float speed = 0.0f;
 	if (input->IsAnalogue)
@@ -51,10 +50,17 @@ void Player::Update(ControllerInput* input, Camera* camera)
 			right.y = 0.0f;
 			MovementDirection = glm::normalize(forward + right);
 			
-			Trans()->SetRotation(atan2f(MovementDirection.x, MovementDirection.z) / 2.0f,
-			                     UP);
+			float yRotation = atan2f(MovementDirection.x, MovementDirection.z);
+			Trans()->SetRotation(yRotation, UP);
 		}
-		speed = Max(Abs(input->MovementAxisX), Abs(input->MovementAxisY)) * WalkSpeed;
+
+		float runPercentage = Max(Abs(input->MovementAxisX), Abs(input->MovementAxisY));
+		speed = runPercentage * WalkSpeed;
+		if (speed > 0)
+		{
+			//p_Animator->SetTrigger(PlayerAnimationTriggers::LOCOMOTION);
+
+		}
 	}
 	else
 	{

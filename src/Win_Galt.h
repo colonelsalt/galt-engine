@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Galt.h"
+#include "Util.h"
 
 struct WinGameCode
 {

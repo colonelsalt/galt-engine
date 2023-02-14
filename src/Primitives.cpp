@@ -13,7 +13,7 @@ void Primitive::Draw()
 
 	glBindVertexArray(VertexArrayId);
 	p_Shader->Bind();
-	p_Shader->SetMat4("u_Model", transform->Global);
+	p_Shader->SetMat4("u_Model", transform->Local);
 	
 	int textureIndex = 0;
 	glActiveTexture(GL_TEXTURE0 + textureIndex);
@@ -78,7 +78,7 @@ static uint32_t SetUpPrimitiveVertexArray(const float* vertices, size_t vertices
 	return vertexArrayId;
 }
 
-static Entity CreatePlane(char* textureName)
+static Entity CreatePlane(char* entityName, char* textureName)
 {
 	Entity entity = g_EntityMaster->CreateEntity("Plane");
 
@@ -89,13 +89,13 @@ static Entity CreatePlane(char* textureName)
 	constexpr float vertices[] = 
 	{
 		// positions            // normals         // texcoords
-		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-		 -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  15.0f,  0.0f,
+		 -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 15.0f,
 		-25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
 
-		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
-		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f,
-		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  15.0f,  0.0f,
+		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  15.0f, 15.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 15.0f
 	};
 	primitive->NumVertices = ArrayCount(vertices) / 8;
 	primitive->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
@@ -165,7 +165,8 @@ static void PopulateCube(Primitive* outCube,
 	outCube->VertexArrayId = SetUpPrimitiveVertexArray(vertices, sizeof(vertices));
 }
 
-static Entity CreateCube(char* diffuseTextureName = nullptr,
+static Entity CreateCube(char* entityName,
+                         char* diffuseTextureName = nullptr,
                          char* specularTextureName = nullptr)
 {
 	Entity entity = g_EntityMaster->CreateEntity("Cube");

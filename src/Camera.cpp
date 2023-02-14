@@ -10,7 +10,7 @@ static Camera CreateCamera()
 	result.Right = { 1.0f, 0.0f, 0.0f };
 
 	result.MouseSensitivity = 0.001f;
-	result.StickSensitivity = 0.017f;
+	result.StickSensitivity = 2.0f;
 	result.MoveSpeed = 3.5f;
 
 	result.Fov = glm::pi<float>() / 4.0f;
@@ -46,8 +46,8 @@ void Camera::FpsUpdate(ControllerInput* input)
 	float xOffset, yOffset;
 	if (input->IsAnalogue)
 	{
-		xOffset = input->CameraAxisX * StickSensitivity;
-		yOffset = input->CameraAxisY * StickSensitivity;
+		xOffset = input->CameraAxisX * StickSensitivity * input->DeltaTime;
+		yOffset = input->CameraAxisY * StickSensitivity * input->DeltaTime;
 	}
 	else
 	{

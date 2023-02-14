@@ -2,6 +2,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Util.h"
+
 static constexpr char* SHADERS_DIR = "src/shaders/";
 
 void Shader::ReloadIfNeeded()
