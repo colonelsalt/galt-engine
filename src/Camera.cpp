@@ -10,8 +10,8 @@ static Camera CreateCamera()
 	result.Right = { 1.0f, 0.0f, 0.0f };
 
 	result.MouseSensitivity = 0.001f;
-	result.StickSensitivity = 2.0f;
-	result.MoveSpeed = 3.5f;
+	result.StickSensitivity = 2.0f / DELTA_TIME_SCALE;
+	result.MoveSpeed = 3.5f / DELTA_TIME_SCALE;
 
 	result.Fov = glm::pi<float>() / 4.0f;
 	result.Aspect = 16.0f / 9.0f;

@@ -321,14 +321,14 @@ int CALLBACK WinMain(HINSTANCE instance,
 	while (!glfwWindowShouldClose(window))
 	{
 		float timeNow = (float)glfwGetTime();
-		newInput->DeltaTime = timeNow - s_LastFrameTime;
+		newInput->DeltaTime = (timeNow - s_LastFrameTime) * DELTA_TIME_SCALE;
 		s_LastFrameTime = timeNow;
 
 		char latencyStr[128];
 		float ms = newInput->DeltaTime * 1'000;
 		int fps = RoundToInt(1.0f / newInput->DeltaTime);
-		sprintf(latencyStr, "%.2fms; %dFPS\n", ms, fps);
-		OutputDebugStringA(latencyStr);
+		//sprintf(latencyStr, "%.2fms; %dFPS\n", ms, fps);
+		//OutputDebugStringA(latencyStr);
 
 
 		if (s_FrameCounter++ % FRAMES_BETWEEN_RELOADS == 0)

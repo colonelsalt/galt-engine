@@ -72,3 +72,10 @@ static float Abs(float x)
 	}
 	return x;
 }
+
+#define GALT_LOG(...)\
+{\
+	char __DEBUG_BUFFER[256];\
+	sprintf(__DEBUG_BUFFER, __VA_ARGS__);\
+	OutputDebugStringA(__DEBUG_BUFFER);\
+}\

@@ -10,3 +10,5 @@
 #define GAME_API __declspec(dllexport)
 
 #define PATH_MAX 260
+
+#define DELTA_TIME_SCALE 1.0f //(1 / 10.0f)

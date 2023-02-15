@@ -4,7 +4,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-static AnimationClip* ParseAnimationClip(char* animationFileName)
+static AnimationClip* ParseAnimationClip(char* animationFileName,
+                                         char* debugName = nullptr)
 {
 	// TODO: Automatic file path
 	char filePath[PATH_MAX];
@@ -16,6 +17,9 @@ static AnimationClip* ParseAnimationClip(char* animationFileName)
 
 	AnimationClip* animationClip = (AnimationClip*)
 		g_Memory->TempAlloc(sizeof(AnimationClip));
+#if GALT_INTERNAL
+	StrCopy(debugName, animationClip->DebugName);
+#endif
 
 	// TODO: Any use case where we don't just want to grab the first animation?
 	aiAnimation* aiAnim = scene->mAnimations[0];
@@ -73,7 +77,31 @@ static AnimationClip* ParseAnimationClip(char* animationFileName)
 	return animationClip;
 }
 
+static AnimationClip* MakeCompositeAnimationClip(AnimationClip* sourceClip,
+                                                 AnimationClip* targetClip,
+                                                 char* debugName = nullptr)
+{
+	AnimationClip* result = (AnimationClip*)g_Memory->TempAlloc(sizeof(AnimationClip));
+	result->LocalDuration = 1.0f;
+	result->TpsScale = targetClip->LocalDuration / sourceClip->LocalDuration;
 
+	result->p_SourceClip = sourceClip;
+	result->p_TargetClip = targetClip;
+	
+	for (uint32_t i = 0; i < MAX_ENTITIES; i++)
+	{
+		if (sourceClip->ap_BoneClips[i] || targetClip->ap_BoneClips[i])
+		{
+			result->ap_BonePoses[i] = (BonePose*)g_Memory->TempAlloc(sizeof(BoneClip));
+		}
+	}
+
+#if GALT_INTERNAL
+	StrCopy(debugName, result->DebugName);
+#endif
+
+	return result;
+}
 
 template <typename T>
 static uint32_t GetKeyIndex(T* keys, uint32_t numkeys, float animationTime)
@@ -130,8 +158,8 @@ void AnimationClip::Update(float animationTime)
 		}
 		if (p_SourceClip && p_TargetClip)
 		{
-			p_SourceClip->Update(animationTime);
-			p_TargetClip->Update(animationTime);
+			p_SourceClip->Update(animationTime * p_SourceClip->LocalDuration);
+			p_TargetClip->Update(animationTime * p_TargetClip->LocalDuration);
 
 			BlendPoses(ap_BonePoses,
 			           p_SourceClip->ap_BonePoses,
@@ -145,6 +173,19 @@ void AnimationClip::Update(float animationTime)
 void BoneClip::Update(float animationTime)
 {
 	LocalPose.Translation = InterpolatePosition(animationTime);
+	if (Constraints.X)
+	{
+		LocalPose.Translation.x = 0.0f;
+	}
+	if (Constraints.Y)
+	{
+		LocalPose.Translation.y = 0.0f;
+	}
+	if (Constraints.Z)
+	{
+		LocalPose.Translation.z = 0.0f;
+	}
+
 	LocalPose.Rotation = InterpolateRotation(animationTime);
 	LocalPose.Scale = InterpolateScale(animationTime);
 }

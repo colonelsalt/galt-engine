@@ -1,17 +1,5 @@
 #include "Player.h"
 
-enum PlayerAnimationTriggers
-{
-	LOCOMOTION,
-	JUMP,
-	IDLE
-};
-
-enum PlayerAnimationBlends
-{
-	WALK,
-	RUN
-};
 
 void Player::Init()
 {
@@ -30,17 +18,13 @@ void Player::Init()
 void Player::Update(ControllerInput* input, Camera* camera)
 {
 	constexpr glm::vec3 UP = { 0.0f, 1.0f, 0.0f };
-	constexpr glm::vec3 FORWARD = { 0.0f, 0.0f, -1.0f };
-	constexpr glm::vec3 BACK = { 0.0f, 0.0f, 1.0f };
-	constexpr glm::vec3 LEFT = { -1.0f, 0.0f, 0.0f };
-	constexpr glm::vec3 RIGHT = { 1.0f, 0.0f, 0.0f };
 
-	WalkSpeed = 20.0f;
-	JumpHeight = 20.0f;
-	Gravity = 100.0f;
+	WalkSpeed = 30.0f;
+	JumpHeight = 30.0f;
+	Gravity = 120.0f;
 
 	float speed = 0.0f;
-	if (input->IsAnalogue)
+	if (input->IsAnalogue && CanMove)
 	{
 		if (input->MovementAxisX != 0.0f || input->MovementAxisY != 0.0f)
 		{
@@ -55,15 +39,20 @@ void Player::Update(ControllerInput* input, Camera* camera)
 		}
 
 		float runPercentage = Max(Abs(input->MovementAxisX), Abs(input->MovementAxisY));
-		speed = runPercentage * WalkSpeed;
-		if (speed > 0)
+		if (runPercentage > 0)
 		{
-			//p_Animator->SetTrigger(PlayerAnimationTriggers::LOCOMOTION);
-
+			p_Animator->SetTrigger(PlayerAnimTriggers::MOVE);
 		}
+		else
+		{
+			p_Animator->SetTrigger(PlayerAnimTriggers::IDLE);
+		}
+		p_Animator->SetVar(PlayerAnimVars::MOVE_SPEED, runPercentage);
+		speed = runPercentage * WalkSpeed;
 	}
 	else
 	{
+		p_Animator->SetTrigger(PlayerAnimTriggers::IDLE);
 		// TODO
 	}
 
@@ -72,9 +61,10 @@ void Player::Update(ControllerInput* input, Camera* camera)
 		CanMove = !CanMove;
 	}
 
-	if (input->A && IsGrounded)
+	if (input->A && IsGrounded && CanMove)
 	{
 		// Jump
+		p_Animator->SetTrigger(PlayerAnimTriggers::JUMP);
 		VerticalSpeed = sqrtf(JumpHeight * Gravity);
 		IsGrounded = false;
 	}
@@ -84,13 +74,20 @@ void Player::Update(ControllerInput* input, Camera* camera)
 	}
 
 	glm::vec3* position = Trans()->Position();
-	if (CanMove)
-	{
-		*position += (speed * MovementDirection
-			+ glm::vec3(0.0f, VerticalSpeed, 0.0f)) * input->DeltaTime;
-	}
+	*position += (speed * MovementDirection
+		+ glm::vec3(0.0f, VerticalSpeed, 0.0f)) * input->DeltaTime;
+	
 	if (position->y < GroundLevel)
 	{
+		if (speed > 0)
+		{
+			p_Animator->SetTrigger(PlayerAnimTriggers::ROLL);
+		}
+		else
+		{
+			p_Animator->SetTrigger(PlayerAnimTriggers::LAND);
+		}
+
 		position->y = GroundLevel;
 		VerticalSpeed = 0.0f;
 		IsGrounded = true;

@@ -28,6 +28,13 @@ struct ScaleKeyframe
 	float Timestamp;
 };
 
+struct TranslationConstraints
+{
+	bool X;
+	bool Y;
+	bool Z;
+};
+
 // Controls the movement of a single bone within a larger animation clip
 struct BoneClip
 {
@@ -42,6 +49,8 @@ struct BoneClip
 
 	BonePose LocalPose;
 
+	TranslationConstraints Constraints;
+
 	Entity EntityHandle;
 
 	void Update(float animationTime);
@@ -53,18 +62,49 @@ struct BoneClip
 
 struct AnimationClip
 {
+#if GALT_INTERNAL
+	char DebugName[MAX_NAME_LENGTH];
+#endif
+
 	float LocalDuration;
 	float LocalTicksPerSecond;
-	bool ShouldLoop;
 
-	uint32_t NumBoneClips; // Probably unneeded since bone array has constant size
-	BoneClip* ap_BoneClips[MAX_ENTITIES];
+	TranslationConstraints Constraints;
+	
 	BonePose* ap_BonePoses[MAX_ENTITIES];
 
+	// Only for use when playing a single clip ---
+	uint32_t NumBoneClips; // Probably unneeded since bone array has constant size
+	BoneClip* ap_BoneClips[MAX_ENTITIES];
+	// ---
+
+	// Only for use when blending between two clips in the same state ---
 	AnimationClip* p_SourceClip;
 	AnimationClip* p_TargetClip;
 	float TargetWeight;
+	float TpsScale;
+	inline void SetTargetWeight(float targetWeight)
+	{
+		TargetWeight = targetWeight - 0.2f;
+		float tps = TpsScale * p_SourceClip->LocalDuration;
+		LocalTicksPerSecond = glm::mix(10.0f / p_SourceClip->LocalDuration,
+		                               30.0f / p_TargetClip->LocalDuration,
+		                               targetWeight);
+	}
+	// ---
 
 	void Update(float animationTime);
 	BonePose* GetBonePoses();
+
+	inline void SetConstraints(const TranslationConstraints& constraints)
+	{
+		for (uint32_t i = 0; i < MAX_MESHES; i++)
+		{
+			BoneClip* boneClip = ap_BoneClips[i];
+			if (boneClip)
+			{
+				boneClip->Constraints = constraints;
+			}
+		}
+	}
 };

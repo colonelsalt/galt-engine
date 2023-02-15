@@ -24,6 +24,7 @@ static constexpr int FRAMES_BETWEEN_RELOADS = 10;
 #include "AnimationClip.cpp"
 #include "Animator.cpp"
 #include "Player.cpp"
+#include "AnimationStates.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -42,6 +43,109 @@ static void UpdateTransforms()
 			transform->Update();
 		}
 	}
+}
+
+static void ConstructPlayerBlendTree(Animator* playerAnimator)
+{
+	TranslationConstraints constrainZ = {};
+	constrainZ.Z = true;
+
+	AnimationClip* idleClip = ParseAnimationClip("Boss/idle.fbx", "IdleClip");
+	AnimationClip* walkClip = ParseAnimationClip("Boss/walking.fbx", "WalkingClip");
+	walkClip->SetConstraints(constrainZ);
+
+	AnimationClip* runClip = ParseAnimationClip("Boss/running.fbx", "RunningClip");
+	runClip->SetConstraints(constrainZ);
+
+	AnimationClip* jumpClip = ParseAnimationClip("Boss/jumping up.fbx", "JumpClip");
+
+	AnimationClip* fallClip = ParseAnimationClip("Boss/falling idle.fbx", "FallingClip");
+
+	AnimationClip* landClip = ParseAnimationClip("Boss/hard landing.fbx", "LandingClip");
+	landClip->Constraints = constrainZ;
+
+	AnimationClip* rollClip = ParseAnimationClip("Boss/falling to roll.fbx", "RollingClip");
+	rollClip->LocalDuration -= 15;
+	rollClip->SetConstraints(constrainZ);
+
+	AnimationClip* locomotionClip = MakeCompositeAnimationClip(walkClip,
+	                                                           runClip,
+	                                                           "LocomotionClip");
+
+	AnimationState* idleState = CreateAnimationState(idleClip, "IdleState");
+	idleState->ShouldLoop = true;
+
+	AnimationState* locomotionState = CreateAnimationState(locomotionClip,
+	                                                       "LocomotionState");
+	locomotionState->ShouldLoop = true;
+	locomotionState->BlendVariable.VarId = PlayerAnimVars::MOVE_SPEED;
+
+	AnimationState* jumpState = CreateAnimationState(jumpClip, "JumpState");
+	AnimationState* fallState = CreateAnimationState(fallClip, "FallingState");
+	fallState->ShouldLoop = true;
+	AnimationState* landState = CreateAnimationState(landClip, "LandingState");
+	AnimationState* rollState = CreateAnimationState(rollClip, "RollingState");
+
+	Transition* idleToLocomotion = CreateTransition(idleState,
+	                                                locomotionState,
+	                                                0.2f,
+	                                                "IdleToLocomotion");
+	idleState->ap_OnTriggerTransitions[PlayerAnimTriggers::MOVE] = idleToLocomotion;
+
+	Transition* locomotionToIdle = CreateTransition(locomotionState,
+	                                                idleState,
+	                                                0.3f,
+	                                                "LocomotionToIdle");
+	locomotionState->ap_OnTriggerTransitions[PlayerAnimTriggers::IDLE] = locomotionToIdle;
+
+	Transition* idleToJump = CreateTransition(idleState,
+	                                          jumpState,
+	                                          0.2f,
+	                                          "IdleToJump");
+	idleState->ap_OnTriggerTransitions[PlayerAnimTriggers::JUMP] = idleToJump;
+	
+	Transition* locomotionToJump = CreateTransition(locomotionState,
+	                                                jumpState,
+	                                                0.2f,
+	                                                "LocomotionToJump");
+	locomotionState->ap_OnTriggerTransitions[PlayerAnimTriggers::JUMP] = locomotionToJump;
+
+	Transition* jumpToFall = CreateTransition(jumpState,
+	                                          fallState,
+	                                          0.2f,
+	                                          "JumpToFall");
+	jumpState->p_OnCompleteTransition = jumpToFall;
+
+	Transition* fallToLand = CreateTransition(fallState,
+	                                          landState,
+	                                          0.1f,
+	                                          "FallToLand");
+	fallState->ap_OnTriggerTransitions[PlayerAnimTriggers::LAND] = fallToLand;
+
+	Transition* landToIdle = CreateTransition(landState,
+	                                          idleState,
+	                                          0.3f,
+	                                          "LandToIdle");
+	landState->p_OnCompleteTransition = landToIdle;
+
+	Transition* fallToRoll = CreateTransition(fallState,
+	                                          rollState,
+	                                          0.2f,
+	                                          "FallToRoll");
+	fallState->ap_OnTriggerTransitions[PlayerAnimTriggers::ROLL] = fallToRoll;
+
+	Transition* rollToLocomotion = CreateTransition(rollState,
+	                                                locomotionState,
+	                                                0.5f,
+	                                                "RollToLocomotion");
+
+	Transition* rollToIdle = CreateTransition(rollState,
+	                                          idleState,
+	                                          0.2f,
+	                                          "RollToIdle");
+	rollState->p_OnCompleteTransition = rollToIdle;
+
+	playerAnimator->p_CurrentState = idleState;
 }
 
 extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* input)
@@ -99,11 +203,10 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		state->Cube.Trans()->Position()->y = 0.5001f;
 
 		state->Player = LoadMesh("Boss/The Boss.fbx");
-		state->IdleClip = ParseAnimationClip("Boss/idle.fbx");
-		state->IdleClip->ShouldLoop = true;
 
 		Animator* playerAnimator = state->Player.AddComponent<Animator>();
-		playerAnimator->Init(state->IdleClip);
+		playerAnimator->Init();
+		ConstructPlayerBlendTree(playerAnimator);
 
 		glm::vec3* playerPos = state->Player.Trans()->Position();
 		*playerPos = { -2.0f, -0.45f, -1.0f };

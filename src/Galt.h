@@ -69,8 +69,6 @@ struct GameState
 	Entity PointLight;
 	Entity Skybox;
 
-	AnimationClip* IdleClip;
-
 	union
 	{
 		Shader Shaders[6];
