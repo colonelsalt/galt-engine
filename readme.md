@@ -13,6 +13,7 @@ In-progress OpenGL-based game engine. The goal of this engine is to be fully cro
 - Fully featured skeletal / blend tree animation system
 - Phong shading with normal map support
 - Shadow maps
+- Third-person character controller
 
 ### Libraries used
 - GLFW for creating window and initialising OpenGL context
