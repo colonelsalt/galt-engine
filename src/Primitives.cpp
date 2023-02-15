@@ -4,7 +4,7 @@
 
 #include "Textures.h"
 
-void Primitive::Draw()
+void Primitive::Draw(uint32_t shadowMapTextureId)
 {
 	Assert(p_Shader); // TODO: Default shader if missing
 
@@ -31,10 +31,12 @@ void Primitive::Draw()
 	if (SpecularTextureId)
 	{
 		glBindTexture(GL_TEXTURE_2D, SpecularTextureId);
+		p_Shader->SetInt("u_UsesSpec", true);
 		p_Shader->SetInt("u_SpecTexture", textureIndex++);
 	}
 	else
 	{
+		p_Shader->SetInt("u_UsesSpec", false);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
@@ -48,6 +50,16 @@ void Primitive::Draw()
 	else
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	}
+	glActiveTexture(GL_TEXTURE0 + textureIndex);
+	if (shadowMapTextureId)
+	{
+		glBindTexture(GL_TEXTURE_2D, shadowMapTextureId);
+		p_Shader->SetInt("u_ShadowMapTexture", textureIndex++);
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glDrawArrays(GL_TRIANGLES, 0, NumVertices);

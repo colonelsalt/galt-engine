@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "Transform.h"
+//#include "Renderer.h"
 
 struct Primitive : public Component
 {
@@ -17,5 +18,5 @@ struct Primitive : public Component
 
 	COMPONENT_DEF(ComponentType::PRIMITIVE, MAX_PRIMITIVES);
 
-	void Draw();
+	void Draw(uint32_t shadowMapTextureId = 0);
 };

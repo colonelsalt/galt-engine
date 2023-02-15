@@ -4,6 +4,7 @@
 constexpr uint32_t MAX_ENTITIES = 300;
 
 struct Transform;
+struct NameTag;
 
 struct Entity
 {
@@ -18,6 +19,8 @@ struct Entity
 	{
 		return GetComponent<Transform>();
 	}
+
+	char* Name();
 
 	template <typename T>
 	T* AddComponent();

@@ -7,17 +7,18 @@ enum class LightType
 	POINT, DIRECTIONAL
 };
 
+struct LightMatrix
+{
+	glm::mat4 Projection;
+	glm::mat4 View;
+};
+
 struct Light : Component
 {
 	LightType Type;
 	glm::vec3 Colour;
-	union
-	{
-		glm::vec3 Position;
-		glm::vec3 Direction;
-	};
 
 	COMPONENT_DEF(ComponentType::LIGHT, MAX_LIGHTS);
 
-	// TODO: Generate light matrix
+	LightMatrix GetLightMatrix(const glm::vec3* targetPos);
 };

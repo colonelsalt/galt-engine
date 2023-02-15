@@ -59,6 +59,9 @@ struct GameState
 
 	uint32_t ProjViewUniformBuffer;
 	uint32_t SkinningMatricesUniformBuffer;
+	
+	uint32_t ShadowMapFramebuffer;
+	uint32_t ShadowMapTextureId;
 
 	Camera FpsCamera;
 	Entity Plane;
@@ -71,12 +74,14 @@ struct GameState
 
 	union
 	{
-		Shader Shaders[6];
+		Shader Shaders[8];
 		struct
 		{
 			Shader PrimitiveShader;
 			Shader BasicPhongShader;
+			Shader PrimitiveShadowShader;
 			Shader MeshShader;
+			Shader MeshShadowShader;
 			Shader AnimShader;
 			Shader SkyboxShader;
 			Shader FlatColourShader;

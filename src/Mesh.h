@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "HashMap.h"
+#include "Renderer.h"
 
 static constexpr int MAX_BONES_PER_VERTEX = 4;
 static constexpr int MAX_TOTAL_BONES = 100;
@@ -49,7 +50,8 @@ enum TextureType
 {
 	DIFFUSE = 1,
 	SPECULAR = 2,
-	NORMAL = 6
+	NORMAL = 6,
+	SHADOW_MAP = 20
 };
 
 enum MeshType
@@ -101,12 +103,13 @@ struct Mesh : public Component
 	MeshTexture* a_Textures;
 
 	Shader* p_Shader;
+	Shader* p_ShadowShader;
 
 	Skeleton* p_Skeleton;
 
 	COMPONENT_DEF(ComponentType::MESH, MAX_MESHES);
 
-	void Draw();
+	void Draw(RenderPass renderPass, uint32_t shadowMapTextureId = 0);
 
 	void SetShader(Shader* shader);
 };

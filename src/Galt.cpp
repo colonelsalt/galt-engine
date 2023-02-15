@@ -25,6 +25,7 @@ static constexpr int FRAMES_BETWEEN_RELOADS = 10;
 #include "Animator.cpp"
 #include "Player.cpp"
 #include "AnimationStates.cpp"
+#include "Lights.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -180,6 +181,10 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		Shader* basicPhongShader = &state->BasicPhongShader;
 		basicPhongShader->CompileProgram("BasicPhongVert.glsl",
 		                                "BasicPhongFrag.glsl");
+		Shader* primitiveShadowShader = &state->PrimitiveShadowShader;
+		primitiveShadowShader->CompileProgram("BasicPhongVert.glsl",
+		                                      "EmptyFrag.glsl");
+
 		Shader* flatColourShader = &state->FlatColourShader;
 		flatColourShader->CompileProgram("BasicVert.glsl",
 		                                 "FlatColourFrag.glsl");
@@ -192,6 +197,9 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 		Shader* skyboxShader = &state->SkyboxShader;
 		skyboxShader->CompileProgram("SkyboxVert.glsl", "SkyboxFrag.glsl");
+
+		Shader* meshShadowShader = &state->MeshShadowShader;
+		meshShadowShader->CompileProgram("SkinnedMeshVert.glsl", "EmptyFrag.glsl");
 
 		state->FpsCamera = CreateCamera();
 		state->Plane = CreatePlane("Plane", "Grass_diffuse.jpg");
@@ -216,8 +224,8 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 		Transform* playerTransform = state->Player.Trans();
 		playerTransform->SetScale( { 0.15f, 0.15f, 0.15f });
 
-
-		SetShaderInHierarchy(state->Player.Trans(), animShader);
+		SetShaderInHierarchy(playerTransform, animShader);
+		SetShaderInHierarchy(playerTransform, meshShadowShader, RenderPass::SHADOWS);
 
 		state->PointLight = g_EntityMaster->CreateEntity("DirLight");
 		Light* lightLight = state->PointLight.AddComponent<Light>();
@@ -252,7 +260,7 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 	
 	lightTransform->SetScale( { 0.25f, 0.25f, 0.25f });
 
-	*lightPos = { 1.0f, 3.0f, 0.0f };
+	*lightPos = { 3.0f, 7.0f, 0.0f };
 
 	Light* lightLight = state->PointLight.GetComponent<Light>();
 	lightLight->Colour = { 1.0f, 1.0f, 1.0f };
@@ -270,8 +278,6 @@ extern "C" void GAME_API UpdateAndRender(GameMemory* memory, ControllerInput* in
 
 	Animator* playerAnimator = &animators[0];
 	playerAnimator->Update(input->DeltaTime);
-
-	//UpdateTransforms();
 
 	RenderScene(state);
 }

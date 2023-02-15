@@ -256,9 +256,6 @@ static Entity LoadMesh(const char* modelName)
 		Assert(false); // Failed to load model
 	}
 
-	// TODO: Handle constructing hierarchy of submeshes
-	//Assert(scene->mNumMeshes == 1);
-
 	// Extract directory name & file name without extension
 	int lastSlashIndex = LastIndexOf(filePath, '/');
 	char* directoryPath = filePath;
@@ -276,41 +273,60 @@ static Entity LoadMesh(const char* modelName)
 	return rootEntity;
 }
 
-void Mesh::Draw()
+void Mesh::Draw(RenderPass renderPass, uint32_t shadowMapTextureId)
 {
 	glBindVertexArray(VertexArrayId);
-	
-	if (!p_Shader)
+	Shader* shader = nullptr;
+	if (renderPass == RenderPass::STANDRD)
+	{
+		shader = p_Shader;
+	}
+	else if (renderPass == RenderPass::SHADOWS)
+	{
+		shader = p_ShadowShader;
+	}
+
+	if (!shader)
 	{
 		// TODO: Use default flat-colour shader if none assigned
 		Assert(false);
 	}
 	
-	p_Shader->Bind();
+	shader->Bind();
 
 	Assert(ThisEntity);
 	Transform* transform = ThisEntity.Trans();
 	Assert(transform);
 
-	p_Shader->SetMat4("u_Model", transform->Global);
+	shader->SetMat4("u_Model", transform->Global);
 	
-	for (uint32_t i = 0; i < NumTextures; i++)
+	// Assign textures to slots
+	if (renderPass == RenderPass::STANDRD)
 	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		MeshTexture* texture = &a_Textures[i];
-		glBindTexture(GL_TEXTURE_2D, texture->TextureId);
+		for (uint32_t i = 0; i < NumTextures; i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+			MeshTexture* texture = &a_Textures[i];
+			glBindTexture(GL_TEXTURE_2D, texture->TextureId);
 		
-		if (texture->Type == TextureType::DIFFUSE)
-		{
-			p_Shader->SetInt("u_DiffuseTexture", i);
+			if (texture->Type == TextureType::DIFFUSE)
+			{
+				shader->SetInt("u_DiffuseTexture", i);
+			}
+			else if (texture->Type == TextureType::SPECULAR)
+			{
+				shader->SetInt("u_SpecTexture", i);
+			}
+			else if (texture->Type == TextureType::NORMAL)
+			{
+				shader->SetInt("u_NormalTexture", i);
+			}
 		}
-		else if (texture->Type == TextureType::SPECULAR)
+		if (shadowMapTextureId)
 		{
-			p_Shader->SetInt("u_SpecTexture", i);
-		}
-		else if (texture->Type == TextureType::NORMAL)
-		{
-			p_Shader->SetInt("u_NormalTexture", i);
+			glActiveTexture(GL_TEXTURE0 + NumTextures);
+			glBindTexture(GL_TEXTURE_2D, shadowMapTextureId);
+			shader->SetInt("u_ShadowMapTexture", NumTextures);
 		}
 	}
 
@@ -319,17 +335,26 @@ void Mesh::Draw()
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static void SetShaderInHierarchy(Transform* transform, Shader* shader)
+static void SetShaderInHierarchy(Transform* transform,
+                                 Shader* shader,
+                                 RenderPass renderPass = RenderPass::STANDRD)
 {
 	Assert(transform && shader);
 	Mesh* mesh = transform->ThisEntity.GetComponent<Mesh>();
 	if (mesh)
 	{
-		mesh->p_Shader = shader;
+		if (renderPass == RenderPass::STANDRD)
+		{
+			mesh->p_Shader = shader;
+		}
+		else if (renderPass == RenderPass::SHADOWS)
+		{
+			mesh->p_ShadowShader = shader;
+		}
 	}
 	for (uint32_t i = 0; i < transform->NumChildren; i++)
 	{
-		SetShaderInHierarchy(transform->a_Children[i], shader);
+		SetShaderInHierarchy(transform->a_Children[i], shader, renderPass);
 	}
 }
 
